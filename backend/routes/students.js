@@ -55,10 +55,12 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'NISN sudah terdaftar', details: 'Student with this NISN already exists' });
     }
     
-    // Use NISN as ID since it's unique
+    // Generate numeric ID from NISN (use last 9 digits to fit INT range)
+    const numericId = parseInt(data.nisn.toString().slice(-9)) || Date.now();
+    
     const sql = `INSERT INTO students (id, nisn, nama, kelas, alamat, no_hp, nama_wali, jenis_kelamin, angkatan, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
     const values = [
-      data.nisn, // Use NISN as ID
+      numericId, // Use shortened NISN as ID
       data.nisn,
       data.nama || data.nama_lengkap || data.name, 
       data.kelas, 
