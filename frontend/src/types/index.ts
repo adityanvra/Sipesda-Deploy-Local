@@ -8,7 +8,7 @@ export interface User {
 export interface Student {
   id: number;
   nisn: string;
-  nama_lengkap: string;
+  nama: string;
   kelas: string;
   nama_wali: string;
   angkatan: string;

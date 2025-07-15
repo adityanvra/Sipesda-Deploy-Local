@@ -136,7 +136,7 @@ const Keuangan: React.FC = () => {
         setCurrentReceipt({
           id: receiptId,
           tanggal: currentDate,
-          siswa: student.nama_lengkap,
+          siswa: student.nama,
           angkatan: student.angkatan,
           bulan: selectedMonths,
           tahunPembayaran: sppYear,
@@ -468,7 +468,7 @@ const Keuangan: React.FC = () => {
                           <div className="grid grid-cols-1 gap-3">
                             <div>
                               <p className="text-sm text-gray-600">Nama</p>
-                              <p className="font-medium">{student.nama_lengkap}</p>
+                              <p className="font-medium">{student.nama}</p>
                     </div>
                             <div>
                               <p className="text-sm text-gray-600">NISN</p>

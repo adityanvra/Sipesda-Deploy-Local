@@ -384,7 +384,7 @@ const RiwayatPembayaran: React.FC = () => {
           
           <div class="info-row">
             <span class="info-label">Nama Siswa:</span>
-            <span>${student.nama_lengkap}</span>
+                            <span>${student.nama}</span>
           </div>
           
           <div class="info-row">
@@ -440,7 +440,7 @@ const RiwayatPembayaran: React.FC = () => {
             </div>
             <div class="signature-box">
               <div>Pembayar</div>
-              <div class="signature-line">${student.nama_lengkap}</div>
+                              <div class="signature-line">${student.nama}</div>
             </div>
           </div>
           
@@ -541,7 +541,7 @@ const RiwayatPembayaran: React.FC = () => {
         
         detailData.push([
           student.nisn,
-          student.nama_lengkap,
+          student.nama,
           student.kelas,
           student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan',
           relevantPayments.length > 0 ? 'Sudah Bayar' : 'Belum Bayar',
@@ -571,7 +571,7 @@ const RiwayatPembayaran: React.FC = () => {
             sppPayments.forEach(payment => {
               sppHistoryData.push([
                 student.nisn,
-                student.nama_lengkap,
+                student.nama,
                 student.kelas,
                 payment.jenis_pembayaran,
                 'Rp ' + parseFloat(String(payment.nominal || 0)).toLocaleString('id-ID'),
@@ -584,7 +584,7 @@ const RiwayatPembayaran: React.FC = () => {
           } else {
             sppHistoryData.push([
               student.nisn,
-              student.nama_lengkap,
+              student.nama,
               student.kelas,
               'Belum ada pembayaran SPP',
               'Rp 0',
@@ -891,7 +891,7 @@ const RiwayatPembayaran: React.FC = () => {
                       </div>
                       <div>
                         <label className="text-sm text-gray-600">Nama</label>
-                        <p className="font-medium">{student.nama_lengkap}</p>
+                        <p className="font-medium">{student.nama}</p>
                       </div>
                       <div>
                         <label className="text-sm text-gray-600">Jenis Kelamin</label>

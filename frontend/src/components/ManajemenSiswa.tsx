@@ -107,7 +107,7 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
 
       const student = {
         nisn,
-        nama_lengkap: nama,
+        nama: nama,
         nama_wali: namaWali,
         kelas,
         angkatan,
@@ -176,7 +176,7 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
 
   const filteredStudents = students.filter(
     (student) =>
-      (student.nama_lengkap || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (student.nama || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (student.nisn || '').includes(searchTerm) ||
       (student.kelas || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -386,7 +386,7 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
                       <td className="px-4 py-3 text-sm font-medium">
                         {student.nisn}
                       </td>
-                      <td className="px-4 py-3 text-sm">{student.nama_lengkap}</td>
+                      <td className="px-4 py-3 text-sm">{student.nama}</td>
                       <td className="px-4 py-3 text-sm">{student.nama_wali}</td>
                       <td className="px-4 py-3 text-sm">
                         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
@@ -405,7 +405,7 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
                           </button>
                           <button
                             onClick={() =>
-                              handleDeleteStudent(student.id, student.nama_lengkap)
+                              handleDeleteStudent(student.id, student.nama)
                             }
                             className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
                           >

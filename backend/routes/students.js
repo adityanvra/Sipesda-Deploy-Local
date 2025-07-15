@@ -47,7 +47,7 @@ router.get('/nisn/:nisn', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const data = req.body;
-    const sql = `INSERT INTO students (nisn, nama_lengkap, kelas, alamat, no_hp, nama_wali, jenis_kelamin, angkatan, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+    const sql = `INSERT INTO students (nisn, nama, kelas, alamat, no_hp, nama_wali, jenis_kelamin, angkatan, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
     const values = [
       data.nisn,
       data.nama || data.nama_lengkap || data.name, 
@@ -73,12 +73,12 @@ router.put('/:id', async (req, res) => {
     const validFields = [];
     const values = [];
     
-    // Direct mapping - tidak perlu mapping lagi karena database sudah disesuaikan
-    const allowedFields = ['nisn', 'nama_lengkap', 'kelas', 'alamat', 'no_hp', 'nama_wali', 'jenis_kelamin', 'angkatan'];
+    // Direct mapping - sesuai dengan database schema
+    const allowedFields = ['nisn', 'nama', 'kelas', 'alamat', 'no_hp', 'nama_wali', 'jenis_kelamin', 'angkatan'];
     
-    // Handle nama field mapping
-    if (data.nama && !data.nama_lengkap) {
-      data.nama_lengkap = data.nama;
+    // Handle nama field mapping untuk backward compatibility
+    if (data.nama_lengkap && !data.nama) {
+      data.nama = data.nama_lengkap;
     }
     
     allowedFields.forEach(field => {
