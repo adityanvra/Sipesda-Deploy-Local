@@ -47,8 +47,18 @@ router.get('/nisn/:nisn', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const data = req.body;
-    const sql = `INSERT INTO students (nisn, nama, kelas, alamat, no_hp, nama_wali, jenis_kelamin, angkatan, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+    console.log('Received data:', data);
+    
+    // Check if NISN already exists
+    const [existing] = await db.execute('SELECT nisn FROM students WHERE nisn = ?', [data.nisn]);
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'NISN sudah terdaftar', details: 'Student with this NISN already exists' });
+    }
+    
+    // Use NISN as ID since it's unique
+    const sql = `INSERT INTO students (id, nisn, nama, kelas, alamat, no_hp, nama_wali, jenis_kelamin, angkatan, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
     const values = [
+      data.nisn, // Use NISN as ID
       data.nisn,
       data.nama || data.nama_lengkap || data.name, 
       data.kelas, 
@@ -58,11 +68,18 @@ router.post('/', async (req, res) => {
       data.jenis_kelamin || 'L',
       data.angkatan || new Date().getFullYear().toString()
     ];
+    
+    console.log('SQL:', sql);
+    console.log('Values:', values);
+    
     const [result] = await db.execute(sql, values);
+    console.log('Insert result:', result);
+    
     res.json({ message: 'Siswa ditambahkan', nisn: data.nisn });
   } catch (err) {
     console.error('Create student error:', err);
-    res.status(500).json({ error: 'Database error', details: err.message });
+    console.error('Error details:', err.code, err.errno, err.sqlMessage);
+    res.status(500).json({ error: 'Database error', details: err.message, sqlError: err.sqlMessage });
   }
 });
 
