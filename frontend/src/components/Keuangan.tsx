@@ -136,7 +136,7 @@ const Keuangan: React.FC = () => {
         setCurrentReceipt({
           id: receiptId,
           tanggal: currentDate,
-          siswa: student.nama,
+          siswa: student.nama_lengkap,
           angkatan: student.angkatan,
           bulan: selectedMonths,
           tahunPembayaran: sppYear,
@@ -179,40 +179,68 @@ const Keuangan: React.FC = () => {
           body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             font-size: 14px;
+            line-height: 1.5;
+            background: #f5f5f5;
+          }
+          .receipt {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
           }
           .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #000;
+            border-bottom: 2px solid #333;
             padding-bottom: 20px;
           }
           .school-name {
             font-size: 18px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            color: #333;
           }
           .school-address {
             font-size: 12px;
             margin-bottom: 3px;
+            color: #666;
           }
           .school-contact {
             font-size: 12px;
             margin-bottom: 3px;
+            color: #666;
           }
           .title {
             font-size: 16px;
             font-weight: bold;
             text-align: center;
             margin: 20px 0;
+            color: #2563eb;
+            text-transform: uppercase;
           }
           .receipt-row {
             display: flex;
-            margin-bottom: 10px;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding: 4px 0;
+            flex-wrap: wrap;
           }
           .receipt-row div:first-child {
-            width: 150px;
+            font-weight: bold;
+            min-width: 150px;
+            color: #555;
+            margin-bottom: 4px;
+          }
+          .receipt-row div:last-child {
+            flex: 1;
+            text-align: right;
+            word-break: break-word;
           }
           .notes {
             margin-top: 30px;
@@ -223,63 +251,117 @@ const Keuangan: React.FC = () => {
             margin-top: 50px;
             text-align: center;
           }
+          
+          /* Mobile Responsive */
+          @media screen and (max-width: 480px) {
+            body {
+              padding: 10px;
+              font-size: 13px;
+            }
+            .receipt {
+              padding: 15px;
+              border-radius: 6px;
+            }
+            .school-name {
+              font-size: 16px;
+            }
+            .title {
+              font-size: 14px;
+            }
+            .receipt-row {
+              flex-direction: column;
+              margin-bottom: 15px;
+            }
+            .receipt-row div:first-child {
+              min-width: auto;
+              margin-bottom: 4px;
+            }
+            .receipt-row div:last-child {
+              text-align: left;
+              font-weight: 600;
+              padding-left: 10px;
+            }
+          }
+          
+          /* Print Styles */
+          @media print {
+            body { 
+              margin: 0; 
+              padding: 0;
+              background: white;
+            }
+            .receipt { 
+              border: none; 
+              box-shadow: none;
+              border-radius: 0;
+              max-width: none;
+            }
+            .receipt-row {
+              flex-direction: row !important;
+            }
+            .receipt-row div:last-child {
+              text-align: right !important;
+            }
+          }
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="school-name">SD MUHAMMADIYAH MLANGI</div>
-          <div class="school-address">Pundung, Nogotirto, Kec. Gamping, Kab. Sleman</div>
-          <div class="school-address">Prov. D.I. Yogyakarta</div>
-          <div class="school-contact">TELP: 02746499098</div>
-          <div class="school-contact">EMAIL: sdm.mlangi@yahoo.co.id</div>
-        </div>
+        <div class="receipt">
+          <div class="header">
+            <div class="school-name">SD MUHAMMADIYAH MLANGI</div>
+            <div class="school-address">Pundung, Nogotirto, Kec. Gamping, Kab. Sleman</div>
+            <div class="school-address">Prov. D.I. Yogyakarta</div>
+            <div class="school-contact">TELP: 02746499098</div>
+            <div class="school-contact">EMAIL: sdm.mlangi@yahoo.co.id</div>
+          </div>
 
-        <div class="title">BUKTI PEMBAYARAN SPP</div>
+          <div class="title">BUKTI PEMBAYARAN SPP</div>
 
-        <div class="receipt-content">
-          <div class="receipt-row">
-            <div>No. Kwitansi</div>
-            <div>: ${currentReceipt.id}</div>
+          <div class="receipt-content">
+            <div class="receipt-row">
+              <div>No. Kwitansi</div>
+              <div>${currentReceipt.id}</div>
+            </div>
+            <div class="receipt-row">
+              <div>Tanggal</div>
+              <div>${new Date(currentReceipt.tanggal).toLocaleDateString('id-ID')}</div>
+            </div>
+            <div class="receipt-row">
+              <div>Nama Siswa</div>
+              <div>${currentReceipt.siswa}</div>
+            </div>
+            <div class="receipt-row">
+              <div>Angkatan</div>
+              <div>${currentReceipt.angkatan}</div>
+            </div>
+            <div class="receipt-row">
+              <div>Pembayaran</div>
+              <div>SPP Bulan ${currentReceipt.bulan.map(month => 
+                months.find(m => m.id === month)?.name
+              ).join(', ')} ${currentReceipt.tahunPembayaran}</div>
+            </div>
+            <div class="receipt-row">
+              <div>Total Pembayaran</div>
+              <div><strong>Rp ${currentReceipt.total.toLocaleString()}</strong></div>
+            </div>
           </div>
-          <div class="receipt-row">
-            <div>Tanggal</div>
-            <div>: ${new Date(currentReceipt.tanggal).toLocaleDateString('id-ID')}</div>
-          </div>
-          <div class="receipt-row">
-            <div>Nama Siswa</div>
-            <div>: ${currentReceipt.siswa}</div>
-          </div>
-          <div class="receipt-row">
-            <div>Angkatan</div>
-            <div>: ${currentReceipt.angkatan}</div>
-          </div>
-          <div class="receipt-row">
-            <div>Pembayaran</div>
-            <div>: SPP Bulan ${currentReceipt.bulan.map(month => 
-              months.find(m => m.id === month)?.name
-            ).join(', ')} ${currentReceipt.tahunPembayaran}</div>
-          </div>
-          <div class="receipt-row">
-            <div>Total Pembayaran</div>
-            <div>: Rp ${currentReceipt.total.toLocaleString()}</div>
-          </div>
-        </div>
 
-        <div class="notes">
-          <div style="margin-bottom: 10px;">
-            <div style="font-weight: bold;">Keterangan:</div>
-            <div>${paymentDetails.keterangan || '-'}</div>
+          <div class="notes">
+            <div style="margin-bottom: 15px;">
+              <div style="font-weight: bold; color: #555;">Keterangan:</div>
+              <div>${paymentDetails.keterangan || '-'}</div>
+            </div>
+            <div>
+              <div style="font-weight: bold; color: #555;">Catatan:</div>
+              <div>${paymentDetails.catatan || '-'}</div>
+            </div>
           </div>
-          <div>
-            <div style="font-weight: bold;">Catatan:</div>
-            <div>${paymentDetails.catatan || '-'}</div>
+          
+          <div class="footer">
+            <div>Petugas,</div>
+            <br/><br/><br/>
+            <div><strong>${currentReceipt.petugas}</strong></div>
           </div>
-        </div>
-        
-        <div class="footer">
-          <div>Petugas,</div>
-          <br/><br/><br/>
-          <div>${currentReceipt.petugas}</div>
         </div>
       </body>
       </html>
@@ -467,7 +549,7 @@ const Keuangan: React.FC = () => {
                           <div className="grid grid-cols-1 gap-3">
                             <div>
                               <p className="text-sm text-gray-600">Nama</p>
-                              <p className="font-medium">{student.nama}</p>
+                              <p className="font-medium">{student.nama_lengkap}</p>
                     </div>
                             <div>
                               <p className="text-sm text-gray-600">NISN</p>

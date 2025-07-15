@@ -9,7 +9,7 @@ const TambahSiswa: React.FC<TambahSiswaProps> = ({ onBack }) => {
   const { db, isLoading: isDbLoading } = useDatabaseContext();
   const [formData, setFormData] = useState({
     nisn: '',
-    nama: '',
+    nama_lengkap: '',
     nama_wali: '',
     angkatan: new Date().getFullYear().toString(),
     kelas: '1A',
@@ -42,7 +42,7 @@ const TambahSiswa: React.FC<TambahSiswaProps> = ({ onBack }) => {
       setError('');
 
       // Validate required fields
-      if (!formData.nisn || !formData.nama || !formData.nama_wali || !formData.kelas) {
+      if (!formData.nisn || !formData.nama_lengkap || !formData.nama_wali || !formData.kelas) {
         throw new Error('Mohon lengkapi semua field yang diperlukan');
       }
 
@@ -143,8 +143,8 @@ const TambahSiswa: React.FC<TambahSiswaProps> = ({ onBack }) => {
                 </label>
                 <input
                   type="text"
-                  name="nama"
-                  value={formData.nama}
+                  name="nama_lengkap"
+                  value={formData.nama_lengkap}
                   onChange={handleChange}
                   placeholder="Masukkan nama lengkap"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"

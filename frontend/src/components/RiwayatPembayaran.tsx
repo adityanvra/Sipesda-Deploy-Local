@@ -259,89 +259,171 @@ const RiwayatPembayaran: React.FC = () => {
           body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            font-size: 12px;
-            line-height: 1.4;
+            padding: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+            background: #f5f5f5;
           }
           .receipt {
-            max-width: 400px;
+            max-width: 100%;
             margin: 0 auto;
+            background: white;
             border: 1px solid #ddd;
+            border-radius: 8px;
             padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
           }
           .header {
             text-align: center;
             border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
           }
           .school-name {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            color: #333;
           }
           .school-info {
-            font-size: 10px;
+            font-size: 12px;
             color: #666;
+            margin-bottom: 3px;
           }
           .receipt-title {
             text-align: center;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 15px 0;
+            margin: 20px 0;
             text-transform: uppercase;
+            color: #2563eb;
           }
           .info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            padding: 2px 0;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding: 4px 0;
+            flex-wrap: wrap;
           }
           .info-label {
             font-weight: bold;
-            min-width: 120px;
+            min-width: 130px;
+            color: #555;
+            margin-bottom: 4px;
+          }
+          .info-value {
+            flex: 1;
+            text-align: right;
+            word-break: break-word;
           }
           .divider {
             border-top: 1px dashed #333;
-            margin: 15px 0;
+            margin: 20px 0;
           }
           .amount-section {
-            background: #f9f9f9;
-            padding: 10px;
-            margin: 15px 0;
+            background: #f0f9ff;
+            border: 2px solid #2563eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
             text-align: center;
           }
           .amount {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             color: #2563eb;
+            margin-top: 5px;
           }
           .footer {
             text-align: center;
-            margin-top: 20px;
-            font-size: 10px;
+            margin-top: 25px;
+            font-size: 11px;
             color: #666;
             border-top: 1px solid #ddd;
-            padding-top: 10px;
+            padding-top: 15px;
           }
           .signature-section {
             display: flex;
             justify-content: space-between;
-            margin-top: 30px;
+            margin-top: 40px;
+            gap: 20px;
           }
           .signature-box {
             text-align: center;
-            width: 45%;
+            flex: 1;
           }
           .signature-line {
             border-top: 1px solid #333;
-            margin-top: 50px;
-            padding-top: 5px;
-            font-size: 10px;
+            margin-top: 60px;
+            padding-top: 8px;
+            font-size: 11px;
+            font-weight: bold;
           }
+          
+          /* Mobile Responsive */
+          @media screen and (max-width: 480px) {
+            body {
+              padding: 10px;
+              font-size: 13px;
+            }
+            .receipt {
+              padding: 15px;
+              border-radius: 6px;
+            }
+            .school-name {
+              font-size: 16px;
+            }
+            .receipt-title {
+              font-size: 14px;
+            }
+            .info-row {
+              flex-direction: column;
+              margin-bottom: 15px;
+            }
+            .info-label {
+              min-width: auto;
+              margin-bottom: 4px;
+            }
+            .info-value {
+              text-align: left;
+              font-weight: 600;
+              padding-left: 10px;
+            }
+            .amount {
+              font-size: 18px;
+            }
+            .signature-section {
+              flex-direction: column;
+              gap: 30px;
+            }
+            .signature-line {
+              margin-top: 40px;
+            }
+          }
+          
+          /* Print Styles */
           @media print {
-            body { margin: 0; }
-            .receipt { border: none; box-shadow: none; }
+            body { 
+              margin: 0; 
+              padding: 0;
+              background: white;
+            }
+            .receipt { 
+              border: none; 
+              box-shadow: none;
+              border-radius: 0;
+              max-width: none;
+            }
+            .info-row {
+              flex-direction: row !important;
+            }
+            .info-value {
+              text-align: right !important;
+            }
+            .signature-section {
+              flex-direction: row !important;
+            }
           }
         </style>
       </head>
@@ -357,12 +439,12 @@ const RiwayatPembayaran: React.FC = () => {
           
           <div class="info-row">
             <span class="info-label">No. Nota:</span>
-            <span>#${payment.id.toString().padStart(6, '0')}</span>
+            <span class="info-value">#${payment.id.toString().padStart(6, '0')}</span>
           </div>
           
           <div class="info-row">
             <span class="info-label">Tanggal:</span>
-            <span>${new Date(payment.tanggal_pembayaran).toLocaleDateString('id-ID', {
+            <span class="info-value">${new Date(payment.tanggal_pembayaran).toLocaleDateString('id-ID', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
@@ -372,65 +454,65 @@ const RiwayatPembayaran: React.FC = () => {
           
           <div class="info-row">
             <span class="info-label">Waktu:</span>
-            <span>${new Date(payment.created_at || payment.tanggal_pembayaran).toLocaleTimeString('id-ID')}</span>
+            <span class="info-value">${new Date(payment.created_at || payment.tanggal_pembayaran).toLocaleTimeString('id-ID')}</span>
           </div>
           
           <div class="divider"></div>
           
           <div class="info-row">
             <span class="info-label">NISN:</span>
-            <span>${student.nisn}</span>
+            <span class="info-value">${student.nisn}</span>
           </div>
           
           <div class="info-row">
             <span class="info-label">Nama Siswa:</span>
-            <span>${student.nama}</span>
+            <span class="info-value">${student.nama_lengkap}</span>
           </div>
           
           <div class="info-row">
             <span class="info-label">Kelas:</span>
-            <span>${student.kelas}</span>
+            <span class="info-value">${student.kelas}</span>
           </div>
           
           <div class="info-row">
             <span class="info-label">Angkatan:</span>
-            <span>${student.angkatan}</span>
+            <span class="info-value">${student.angkatan}</span>
           </div>
           
           <div class="divider"></div>
           
           <div class="info-row">
             <span class="info-label">Jenis Pembayaran:</span>
-            <span>${payment.jenis_pembayaran}</span>
+            <span class="info-value">${payment.jenis_pembayaran}</span>
           </div>
           
           <div class="info-row">
             <span class="info-label">Status:</span>
-            <span style="color: #16a34a; font-weight: bold;">${payment.status.toUpperCase()}</span>
+            <span class="info-value" style="color: #16a34a; font-weight: bold;">${payment.status.toUpperCase()}</span>
           </div>
           
           ${payment.keterangan ? `
           <div class="info-row">
             <span class="info-label">Keterangan:</span>
-            <span>${payment.keterangan}</span>
+            <span class="info-value">${payment.keterangan}</span>
           </div>
           ` : ''}
           
           ${payment.catatan ? `
           <div class="info-row">
             <span class="info-label">Catatan:</span>
-            <span>${payment.catatan}</span>
+            <span class="info-value">${payment.catatan}</span>
           </div>
           ` : ''}
           
           <div class="amount-section">
             <div>TOTAL PEMBAYARAN</div>
-                         <div class="amount">Rp ${parseFloat(String(payment.nominal)).toLocaleString('id-ID')}</div>
+            <div class="amount">Rp ${parseFloat(String(payment.nominal)).toLocaleString('id-ID')}</div>
           </div>
           
           <div class="info-row">
             <span class="info-label">Petugas:</span>
-            <span>${payment.petugas}</span>
+            <span class="info-value">${payment.petugas}</span>
           </div>
           
           <div class="signature-section">
@@ -440,7 +522,7 @@ const RiwayatPembayaran: React.FC = () => {
             </div>
             <div class="signature-box">
               <div>Pembayar</div>
-              <div class="signature-line">${student.nama}</div>
+              <div class="signature-line">${student.nama_lengkap}</div>
             </div>
           </div>
           
@@ -541,7 +623,7 @@ const RiwayatPembayaran: React.FC = () => {
         
         detailData.push([
           student.nisn,
-          student.nama,
+          student.nama_lengkap,
           student.kelas,
           student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan',
           relevantPayments.length > 0 ? 'Sudah Bayar' : 'Belum Bayar',
@@ -571,7 +653,7 @@ const RiwayatPembayaran: React.FC = () => {
             sppPayments.forEach(payment => {
               sppHistoryData.push([
                 student.nisn,
-                student.nama,
+                student.nama_lengkap,
                 student.kelas,
                 payment.jenis_pembayaran,
                 'Rp ' + parseFloat(String(payment.nominal || 0)).toLocaleString('id-ID'),
@@ -584,7 +666,7 @@ const RiwayatPembayaran: React.FC = () => {
           } else {
             sppHistoryData.push([
               student.nisn,
-              student.nama,
+              student.nama_lengkap,
               student.kelas,
               'Belum ada pembayaran SPP',
               'Rp 0',
@@ -891,7 +973,7 @@ const RiwayatPembayaran: React.FC = () => {
                       </div>
                       <div>
                         <label className="text-sm text-gray-600">Nama</label>
-                        <p className="font-medium">{student.nama}</p>
+                        <p className="font-medium">{student.nama_lengkap}</p>
                       </div>
                       <div>
                         <label className="text-sm text-gray-600">Jenis Kelamin</label>

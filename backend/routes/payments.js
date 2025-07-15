@@ -14,7 +14,6 @@ router.get('/', async (req, res) => {
       sql += ' WHERE student_nisn = ?';
       params.push(studentNisn);
     } else if (studentId) {
-      // Support legacy student_id by looking up NISN first
       const [studentResult] = await db.execute('SELECT nisn FROM students WHERE id = ?', [studentId]);
       if (studentResult.length > 0) {
         sql += ' WHERE student_nisn = ?';
