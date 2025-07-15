@@ -176,9 +176,9 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
 
   const filteredStudents = students.filter(
     (student) =>
-      student.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.nisn.includes(searchTerm) ||
-      student.kelas.toLowerCase().includes(searchTerm.toLowerCase())
+      (student.nama_lengkap || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (student.nisn || '').includes(searchTerm) ||
+      (student.kelas || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isDbLoading) {
