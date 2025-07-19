@@ -79,70 +79,7 @@ app.post('/api/test-login', (req, res) => {
   });
 });
 
-// Simple login endpoint for testing
-app.post('/api/simple-login', (req, res) => {
-  const { username, password } = req.body;
-  
-  if (username === 'admin' && password === 'admin123') {
-    const jwt = require('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024_production';
-    
-    const token = jwt.sign(
-      { 
-        id: 1, 
-        username: 'admin', 
-        role: 'admin',
-        nama_lengkap: 'Administrator'
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
 
-    res.json({
-      message: 'Login berhasil (simple mode)',
-      token,
-      user: {
-        id: 1,
-        username: 'admin',
-        nama_lengkap: 'Administrator',
-        role: 'admin',
-        email: 'admin@sipesda.com',
-        no_hp: '08123456789',
-        aktif: true
-      }
-    });
-  } else if (username === 'operator' && password === 'operator123') {
-    const jwt = require('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024_production';
-    
-    const token = jwt.sign(
-      { 
-        id: 2, 
-        username: 'operator', 
-        role: 'operator',
-        nama_lengkap: 'Operator'
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({
-      message: 'Login berhasil (simple mode)',
-      token,
-      user: {
-        id: 2,
-        username: 'operator',
-        nama_lengkap: 'Operator',
-        role: 'operator',
-        email: 'operator@sipesda.com',
-        no_hp: '08123456788',
-        aktif: true
-      }
-    });
-  } else {
-    res.status(401).json({ error: 'Username atau password salah' });
-  }
-});
 
 
 

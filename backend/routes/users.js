@@ -131,6 +131,10 @@ router.post('/login', async (req, res) => {
       const connection = await mysql.createConnection(dbConfig);
       console.log('Database connection established');
       
+      // Test connection with simple query
+      await connection.execute('SELECT 1 as test');
+      console.log('Database connection test successful');
+      
       const [rows] = await connection.execute(
         'SELECT * FROM users WHERE username = ? AND aktif = TRUE',
         [username]
@@ -193,19 +197,29 @@ router.post('/login', async (req, res) => {
       
       // More specific error handling
       if (dbError.code === 'ECONNREFUSED') {
-        return res.status(500).json({ error: 'Database connection failed' });
+        return res.status(500).json({ 
+          error: 'Database connection failed',
+          message: 'Tidak dapat terhubung ke database server'
+        });
       }
       
       if (dbError.code === 'ER_ACCESS_DENIED_ERROR') {
-        return res.status(500).json({ error: 'Database access denied' });
+        return res.status(500).json({ 
+          error: 'Database access denied',
+          message: 'Username atau password database salah'
+        });
       }
       
       if (dbError.code === 'ER_BAD_DB_ERROR') {
-        return res.status(500).json({ error: 'Database not found' });
+        return res.status(500).json({ 
+          error: 'Database not found',
+          message: 'Database tidak ditemukan'
+        });
       }
       
       return res.status(500).json({ 
         error: 'Database error',
+        message: 'Terjadi kesalahan pada database',
         details: process.env.NODE_ENV === 'development' ? dbError.message : undefined
       });
     }
