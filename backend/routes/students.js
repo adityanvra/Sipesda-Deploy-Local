@@ -12,34 +12,44 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
-  try {
-    // Support pencarian by NISN (primary key) atau ID lama
-    let sql, param;
-    if (req.params.id.length > 10) {
-      // Jika lebih dari 10 karakter, kemungkinan NISN
-      sql = 'SELECT * FROM students WHERE nisn = ?';
-      param = req.params.id;
-    } else {
-      // Jika kurang, bisa ID lama atau NISN pendek
-      sql = 'SELECT * FROM students WHERE nisn = ? OR id = ?';
-      param = req.params.id;
-    }
-    
-    const [results] = await db.execute(sql, sql.includes('OR') ? [param, param] : [param]);
-    res.json(results[0] || null);
-  } catch (err) {
-    console.error('Get student by id error:', err);
-    res.status(500).json({ error: 'Database error', details: err.message });
-  }
-});
-
+// Route untuk mendapatkan siswa berdasarkan NISN (harus didefinisikan sebelum /:id)
 router.get('/nisn/:nisn', async (req, res) => {
   try {
+    console.log('Getting student by NISN:', req.params.nisn);
     const [results] = await db.execute('SELECT * FROM students WHERE nisn = ?', [req.params.nisn]);
     res.json(results[0] || null);
   } catch (err) {
     console.error('Get student by nisn error:', err);
+    res.status(500).json({ error: 'Database error', details: err.message });
+  }
+});
+
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('Getting student by ID/NISN:', id);
+    
+    // Support pencarian by NISN (primary key) atau ID lama
+    let sql, param;
+    if (id.length > 10) {
+      // Jika lebih dari 10 karakter, kemungkinan NISN
+      sql = 'SELECT * FROM students WHERE nisn = ?';
+      param = id;
+    } else {
+      // Jika kurang, bisa ID lama atau NISN pendek
+      sql = 'SELECT * FROM students WHERE nisn = ? OR id = ?';
+      param = id;
+    }
+    
+    const [results] = await db.execute(sql, sql.includes('OR') ? [param, param] : [param]);
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Siswa tidak ditemukan' });
+    }
+    
+    res.json(results[0]);
+  } catch (err) {
+    console.error('Get student by id error:', err);
     res.status(500).json({ error: 'Database error', details: err.message });
   }
 });
