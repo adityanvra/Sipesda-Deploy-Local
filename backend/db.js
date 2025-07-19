@@ -2,11 +2,11 @@ const mysql = require('mysql2/promise');
 
 // Create connection pool for serverless functions
 const pool = mysql.createPool({
-  host: process.env.MYSQLHOST || process.env.DB_HOST || 'mysql.railway.internal',
+  host: process.env.MYSQLHOST || process.env.DB_HOST || 'ballast.proxy.rlwy.net',
   user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
   password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || 'ZOXgksyyTFcwFYmXlJvcwTLpQtgNIBPn',
   database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'railway',
-  port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+  port: process.env.MYSQLPORT || process.env.DB_PORT || 50251,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   waitForConnections: true,
   connectionLimit: 10,

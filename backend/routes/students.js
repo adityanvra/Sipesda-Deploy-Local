@@ -30,6 +30,11 @@ router.get('/:id', async (req, res) => {
     console.log('🔍 Getting student by ID/NISN:', id);
     console.log('📋 Request headers:', req.headers);
     console.log('📋 Request method:', req.method);
+    console.log('📋 Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      MYSQLHOST: process.env.MYSQLHOST || 'not set',
+      MYSQLDATABASE: process.env.MYSQLDATABASE || 'not set'
+    });
     
     // Validate input
     if (!id || id.trim() === '') {
@@ -65,6 +70,7 @@ router.get('/:id', async (req, res) => {
   } catch (err) {
     console.error('❌ Get student by id error:', err);
     console.error('❌ Error details:', err.code, err.errno, err.sqlMessage);
+    console.error('❌ Database connection error:', err.message);
     res.status(500).json({ 
       error: 'Database error', 
       details: err.message,

@@ -12,7 +12,7 @@ const app = express();
 // CORS configuration for production
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://sipesda-deploy-frontend.vercel.app', 'https://sipesda-deploy.vercel.app'] // Frontend Vercel domains
+    ? [process.env.FRONTEND_URL || 'https://sipesda-deploy-frontend.vercel.app', 'https://sipesda-deploy.vercel.app'] // Frontend Vercel domains
     : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
