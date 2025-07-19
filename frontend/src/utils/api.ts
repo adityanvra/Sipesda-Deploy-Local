@@ -38,7 +38,7 @@ export interface PaymentType {
   nama: string;
   nominal: number;
   periode: string;
-  aktif: boolean;
+
 }
 
 // API functions with authentication

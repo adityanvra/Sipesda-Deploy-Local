@@ -9,7 +9,6 @@ export interface User {
   role: 'admin' | 'operator';
   email?: string;
   no_hp?: string;
-  aktif: boolean;
   last_login?: string;
   created_at?: string;
 }
@@ -41,7 +40,7 @@ export const useAuth = () => {
 
 // API Base URL
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://sipesda-deploy-backend.vercel.app/api'
+  ? 'https://sipesda-deploy.vercel.app/api'
   : 'http://localhost:5000/api';
 
 // Provider component

@@ -3,6 +3,11 @@ export interface User {
   username: string;
   password: string;
   role: 'admin' | 'operator';
+  nama_lengkap: string;
+  email?: string;
+  no_hp?: string;
+  last_login?: string;
+  created_at?: string;
 }
 
 export interface Student {
@@ -38,5 +43,4 @@ export interface PaymentType {
   nama: string;
   nominal: number;
   periode: string;
-  aktif: boolean;
 }

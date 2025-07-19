@@ -14,7 +14,7 @@ const dbConfig = {
   port: process.env.DB_PORT || 50251,
 };
 
-// JWT Secret
+// JWT Secret - Use Railway environment variable
 const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024_production';
 
 // GET /api/users/health - Health check endpoint for debugging (no auth required)
