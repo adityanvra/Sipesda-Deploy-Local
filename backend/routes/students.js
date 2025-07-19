@@ -1,10 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const mysql = require('mysql2/promise');
+const { authenticateToken, requireAdminOrOperator } = require('../middleware/auth');
 
-router.get('/', async (req, res) => {
+// Database connection
+const dbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'sipesda_sekolah',
+  port: process.env.DB_PORT || 3306,
+};
+
+router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
   try {
-    const [results] = await db.execute('SELECT * FROM students');
+    const connection = await mysql.createConnection(dbConfig);
+    const [results] = await connection.execute('SELECT * FROM students ORDER BY created_at DESC');
+    await connection.end();
     res.json(results);
   } catch (err) {
     console.error('Get students error:', err);
@@ -12,8 +24,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticateToken, requireAdminOrOperator, async (req, res) => {
   try {
+    const connection = await mysql.createConnection(dbConfig);
+    
     // Support pencarian by NISN (primary key) atau ID lama
     let sql, param;
     if (req.params.id.length > 10) {
@@ -26,7 +40,8 @@ router.get('/:id', async (req, res) => {
       param = req.params.id;
     }
     
-    const [results] = await db.execute(sql, sql.includes('OR') ? [param, param] : [param]);
+    const [results] = await connection.execute(sql, sql.includes('OR') ? [param, param] : [param]);
+    await connection.end();
     res.json(results[0] || null);
   } catch (err) {
     console.error('Get student by id error:', err);
@@ -34,9 +49,11 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.get('/nisn/:nisn', async (req, res) => {
+router.get('/nisn/:nisn', authenticateToken, requireAdminOrOperator, async (req, res) => {
   try {
-    const [results] = await db.execute('SELECT * FROM students WHERE nisn = ?', [req.params.nisn]);
+    const connection = await mysql.createConnection(dbConfig);
+    const [results] = await connection.execute('SELECT * FROM students WHERE nisn = ?', [req.params.nisn]);
+    await connection.end();
     res.json(results[0] || null);
   } catch (err) {
     console.error('Get student by nisn error:', err);
@@ -44,14 +61,18 @@ router.get('/nisn/:nisn', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
   try {
     const data = req.body;
     console.log('Received data:', data);
+    console.log('User:', req.user.username, 'Role:', req.user.role);
+    
+    const connection = await mysql.createConnection(dbConfig);
     
     // Check if NISN already exists
-    const [existing] = await db.execute('SELECT nisn FROM students WHERE nisn = ?', [data.nisn]);
+    const [existing] = await connection.execute('SELECT nisn FROM students WHERE nisn = ?', [data.nisn]);
     if (existing.length > 0) {
+      await connection.end();
       return res.status(400).json({ error: 'NISN sudah terdaftar', details: 'Student with this NISN already exists' });
     }
     
@@ -74,7 +95,8 @@ router.post('/', async (req, res) => {
     console.log('SQL:', sql);
     console.log('Values:', values);
     
-    const [result] = await db.execute(sql, values);
+    const [result] = await connection.execute(sql, values);
+    await connection.end();
     console.log('Insert result:', result);
     
     res.json({ message: 'Siswa ditambahkan', nisn: data.nisn });
@@ -85,9 +107,13 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticateToken, requireAdminOrOperator, async (req, res) => {
   try {
     const data = req.body;
+    console.log('Update by user:', req.user.username, 'Role:', req.user.role);
+    
+    const connection = await mysql.createConnection(dbConfig);
+    
     // Updated field mapping untuk database yang sudah diubah
     const validFields = [];
     const values = [];
@@ -118,6 +144,7 @@ router.put('/:id', async (req, res) => {
     }
     
     if (validFields.length === 0) {
+      await connection.end();
       return res.status(400).json({ error: 'No valid fields to update' });
     }
     
@@ -128,7 +155,7 @@ router.put('/:id', async (req, res) => {
     // Jika ID tidak terlihat seperti NISN, coba cari by ID dulu untuk mendapatkan NISN
     if (req.params.id.length <= 10) {
       try {
-        const [existing] = await db.execute('SELECT nisn FROM students WHERE id = ?', [req.params.id]);
+        const [existing] = await connection.execute('SELECT nisn FROM students WHERE id = ?', [req.params.id]);
         if (existing.length > 0) {
           whereValue = existing[0].nisn;
         }
@@ -140,7 +167,8 @@ router.put('/:id', async (req, res) => {
     }
     
     const sql = `UPDATE students SET ${validFields.join(', ')}, updated_at = NOW() WHERE ${whereClause}`;
-    await db.execute(sql, [...values, whereValue]);
+    await connection.execute(sql, [...values, whereValue]);
+    await connection.end();
     res.json({ message: 'Siswa diperbarui' });
   } catch (err) {
     console.error('Update student error:', err);
@@ -148,15 +176,19 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateToken, requireAdminOrOperator, async (req, res) => {
   try {
+    console.log('Delete by user:', req.user.username, 'Role:', req.user.role);
+    
+    const connection = await mysql.createConnection(dbConfig);
+    
     // Delete by NISN (primary key) if possible, otherwise by ID
     let whereClause = 'nisn = ?';
     let whereValue = req.params.id;
     
     if (req.params.id.length <= 10) {
       try {
-        const [existing] = await db.execute('SELECT nisn FROM students WHERE id = ?', [req.params.id]);
+        const [existing] = await connection.execute('SELECT nisn FROM students WHERE id = ?', [req.params.id]);
         if (existing.length > 0) {
           whereValue = existing[0].nisn;
         }
@@ -166,7 +198,8 @@ router.delete('/:id', async (req, res) => {
       }
     }
     
-    await db.execute(`DELETE FROM students WHERE ${whereClause}`, [whereValue]);
+    await connection.execute(`DELETE FROM students WHERE ${whereClause}`, [whereValue]);
+    await connection.end();
     res.json({ message: 'Siswa dihapus' });
   } catch (err) {
     console.error('Delete student error:', err);

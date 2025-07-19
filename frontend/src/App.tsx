@@ -1,12 +1,14 @@
 import React, { useState } from "react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginPage from "./components/LoginPage";
 import Dashboard from "./components/Dashboard";
+import AdminDashboard from "./components/AdminDashboard";
 import Keuangan from "./components/Keuangan";
 import RiwayatPembayaran from "./components/RiwayatPembayaran";
 import ManajemenSiswa from "./components/ManajemenSiswa";
 import TambahSiswa from "./components/TambahSiswa";
 import EditSiswa from "./components/EditSiswa";
-import { User } from "./types";
+import UserManagement from "./components/UserManagement";
 
 import iconUser from "./assets/user.png";
 import iconDashboard from "./assets/dashboard.png";
@@ -15,19 +17,15 @@ import iconHistory from "./assets/history.png";
 import iconStudents from "./assets/students.png";
 import iconLogout from "./assets/logout.png";
 
-function App() {
-  const [currentPage, setCurrentPage] = useState("login");
-  const [user, setUser] = useState<User | null>(null);
+// Main App Component that uses authentication
+const AppContent = () => {
+  const { user, logout, isAuthenticated, isAdmin, isOperator, loading } = useAuth();
+  const [currentPage, setCurrentPage] = useState("dashboard");
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
 
-  const handleLogin = (userData: User) => {
-    setUser(userData);
-    setCurrentPage("dashboard");
-  };
-
   const handleLogout = () => {
-    setUser(null);
-    setCurrentPage("login");
+    logout();
+    setCurrentPage("dashboard");
     setSelectedStudentId(null);
   };
 
@@ -36,14 +34,28 @@ function App() {
     setCurrentPage("edit-siswa");
   };
 
-  if (!user) {
-    return <LoginPage onLogin={handleLogin} />;
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#226398] via-[#012246] to-[#254E70] flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />;
   }
 
   const renderCurrentPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <Dashboard />;
+        // Show different dashboard based on role
+        return isAdmin ? <AdminDashboard /> : <Dashboard />;
       case "keuangan":
         return <Keuangan />;
       case "riwayat":
@@ -59,8 +71,15 @@ function App() {
         return <TambahSiswa onBack={() => setCurrentPage("manajemen")} />;
       case "edit-siswa":
         return <EditSiswa studentId={selectedStudentId!} onBack={() => setCurrentPage("manajemen")} />;
+      case "user-management":
+        // Only admin can access
+        if (isAdmin) {
+          return <UserManagement />;
+        } else {
+          return isAdmin ? <AdminDashboard /> : <Dashboard />;
+        }
       default:
-        return <Dashboard />;
+        return isAdmin ? <AdminDashboard /> : <Dashboard />;
     }
   };
 
@@ -82,9 +101,14 @@ function App() {
                 </div>
                 <div>
                   <p className="text-white font-medium">
-                    {user.role === "admin" ? "Administrator" : "Operator"}
+                    {user?.nama_lengkap || user?.username}
                   </p>
-                  <p className="text-slate-300 text-sm">{user.username}</p>
+                  <p className="text-slate-300 text-sm">
+                    {isAdmin ? "Administrator" : "Operator"}
+                  </p>
+                  <p className="text-slate-400 text-xs">
+                    @{user?.username}
+                  </p>
                 </div>
               </div>
             </div>
@@ -157,6 +181,23 @@ function App() {
                     <span className="font-bold">Manajemen Siswa</span>
                   </button>
                 </li>
+                
+                {/* Admin-only menu */}
+                {isAdmin && (
+                  <li>
+                    <button
+                      onClick={() => setCurrentPage("user-management")}
+                      className={`w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors ${
+                        currentPage === "user-management"
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-800 hover:bg-blue-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <img src={iconUser} alt="Users" className="w-5 h-5" />
+                      <span className="font-bold">Manajemen User</span>
+                    </button>
+                  </li>
+                )}
               </ul>
             </nav>
 
@@ -178,6 +219,15 @@ function App() {
         <div className="flex-1">{renderCurrentPage()}</div>
       </div>
     </div>
+  );
+};
+
+// Main App wrapper with AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

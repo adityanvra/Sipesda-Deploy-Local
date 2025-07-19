@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { User } from '../types';
-import { useDatabaseContext } from '../contexts/DatabaseContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginPageProps {
-  onLogin: (user: User) => void;
+  onLogin?: () => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const { db, isLoading: isDbLoading } = useDatabaseContext();
+  const { login, loading: authLoading } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -16,29 +15,31 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!db || isDbLoading) return;
     
     setLoading(true);
     setError('');
 
     try {
-      const user = await db.authenticateUser(username, password);
-      if (user) {
-        onLogin(user);
-      } else {
-        setError('Username atau password salah');
+      await login(username, password);
+      
+      // Call optional onLogin callback
+      if (onLogin) {
+        onLogin();
       }
-    } catch (err) {
-      setError('Terjadi kesalahan saat login');
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan saat login');
     } finally {
       setLoading(false);
     }
   };
 
-  if (isDbLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#226398] via-[#012246] to-[#254E70] flex items-center justify-center p-4">
-        <div className="text-white">Loading...</div>
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
       </div>
     );
   }
@@ -95,7 +96,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           {/* Login Button */}
           <button
             type="submit"
-            disabled={loading || !db}
+            disabled={loading || authLoading}
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Masuk...' : 'Login'}
