@@ -14,60 +14,10 @@ const dbConfig = {
 
 router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
   try {
-    // Try database first
-    try {
-      const connection = await mysql.createConnection(dbConfig);
-      const [results] = await connection.execute('SELECT * FROM students ORDER BY created_at DESC');
-      await connection.end();
-      res.json(results);
-    } catch (dbError) {
-      console.warn('Database error, returning demo data:', dbError);
-      
-      // Demo data for testing
-      const demoStudents = [
-        {
-          id: 1,
-          nisn: '1234567890',
-          nama: 'Ahmad Fadillah',
-          kelas: 'XII IPA 1',
-          alamat: 'Jl. Merdeka No. 123',
-          no_hp: '08123456789',
-          nama_wali: 'Budi Santoso',
-          jenis_kelamin: 'L',
-          angkatan: '2023',
-          created_at: '2024-01-15T10:00:00Z',
-          updated_at: '2024-01-15T10:00:00Z'
-        },
-        {
-          id: 2,
-          nisn: '1234567891',
-          nama: 'Siti Nurhaliza',
-          kelas: 'XII IPS 1',
-          alamat: 'Jl. Sudirman No. 456',
-          no_hp: '08123456790',
-          nama_wali: 'Ahmad Hidayat',
-          jenis_kelamin: 'P',
-          angkatan: '2023',
-          created_at: '2024-01-15T10:00:00Z',
-          updated_at: '2024-01-15T10:00:00Z'
-        },
-        {
-          id: 3,
-          nisn: '1234567892',
-          nama: 'Muhammad Rizki',
-          kelas: 'XI IPA 1',
-          alamat: 'Jl. Gatot Subroto No. 789',
-          no_hp: '08123456791',
-          nama_wali: 'Siti Aminah',
-          jenis_kelamin: 'L',
-          angkatan: '2024',
-          created_at: '2024-01-15T10:00:00Z',
-          updated_at: '2024-01-15T10:00:00Z'
-        }
-      ];
-      
-      res.json(demoStudents);
-    }
+    const connection = await mysql.createConnection(dbConfig);
+    const [results] = await connection.execute('SELECT * FROM students ORDER BY created_at DESC');
+    await connection.end();
+    res.json(results);
   } catch (err) {
     console.error('Get students error:', err);
     res.status(500).json({ error: 'Database error', details: err.message });

@@ -14,81 +14,34 @@ const dbConfig = {
 
 router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
   try {
-    // Try database first
-    try {
-      const studentId = req.query.student_id;
-      const studentNisn = req.query.student_nisn;
-      
-      const connection = await mysql.createConnection(dbConfig);
-      
-      let sql = 'SELECT * FROM payments';
-      let params = [];
-      
-      if (studentNisn) {
-        // Use NISN if provided
+    const studentId = req.query.student_id;
+    const studentNisn = req.query.student_nisn;
+    
+    const connection = await mysql.createConnection(dbConfig);
+    
+    let sql = 'SELECT * FROM payments';
+    let params = [];
+    
+    if (studentNisn) {
+      // Use NISN if provided
+      sql += ' WHERE student_nisn = ?';
+      params.push(studentNisn);
+    } else if (studentId) {
+      const [studentResult] = await connection.execute('SELECT nisn FROM students WHERE id = ?', [studentId]);
+      if (studentResult.length > 0) {
         sql += ' WHERE student_nisn = ?';
-        params.push(studentNisn);
-      } else if (studentId) {
-        const [studentResult] = await connection.execute('SELECT nisn FROM students WHERE id = ?', [studentId]);
-        if (studentResult.length > 0) {
-          sql += ' WHERE student_nisn = ?';
-          params.push(studentResult[0].nisn);
-        } else {
-          await connection.end();
-          return res.json([]); // No student found
-        }
+        params.push(studentResult[0].nisn);
+      } else {
+        await connection.end();
+        return res.json([]); // No student found
       }
-      
-      sql += ' ORDER BY tanggal_pembayaran DESC, created_at DESC';
-      
-      const [results] = await connection.execute(sql, params);
-      await connection.end();
-      res.json(results);
-    } catch (dbError) {
-      console.warn('Database error, returning demo data:', dbError);
-      
-      // Demo data for testing
-      const demoPayments = [
-        {
-          id: 1,
-          student_nisn: '1234567890',
-          jenis_pembayaran: 'SPP Bulanan',
-          nominal: 150000,
-          tanggal_pembayaran: '2024-01-15',
-          status: 'lunas',
-          keterangan: 'Pembayaran SPP Januari 2024',
-          catatan: 'Dibayar tepat waktu',
-          petugas: 'admin',
-          created_at: '2024-01-15T10:00:00Z'
-        },
-        {
-          id: 2,
-          student_nisn: '1234567891',
-          jenis_pembayaran: 'Uang Buku',
-          nominal: 50000,
-          tanggal_pembayaran: '2024-01-10',
-          status: 'lunas',
-          keterangan: 'Pembayaran buku semester 2',
-          catatan: 'Buku sudah diterima',
-          petugas: 'operator',
-          created_at: '2024-01-10T10:00:00Z'
-        },
-        {
-          id: 3,
-          student_nisn: '1234567892',
-          jenis_pembayaran: 'Seragam',
-          nominal: 200000,
-          tanggal_pembayaran: '2024-01-05',
-          status: 'lunas',
-          keterangan: 'Pembayaran seragam baru',
-          catatan: 'Seragam sudah diambil',
-          petugas: 'admin',
-          created_at: '2024-01-05T10:00:00Z'
-        }
-      ];
-      
-      res.json(demoPayments);
     }
+    
+    sql += ' ORDER BY tanggal_pembayaran DESC, created_at DESC';
+    
+    const [results] = await connection.execute(sql, params);
+    await connection.end();
+    res.json(results);
   } catch (err) {
     console.error('Get payments error:', err);
     res.status(500).json({ error: 'Database error', details: err.message });
