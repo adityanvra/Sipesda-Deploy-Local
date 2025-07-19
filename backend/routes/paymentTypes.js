@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const { authenticateSession, requireAdminOrOperator, requireAdmin } = require('../middleware/session');
 
 // Database connection
 const dbConfig = {
@@ -13,7 +12,7 @@ const dbConfig = {
 };
 
 // GET - Read payment types (admin and operator can view)
-router.get('/', authenticateSession, requireAdminOrOperator, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [results] = await connection.execute('SELECT * FROM payment_types WHERE aktif = 1');
@@ -26,7 +25,7 @@ router.get('/', authenticateSession, requireAdminOrOperator, async (req, res) =>
 });
 
 // POST - Create new payment type (admin only)
-router.post('/', authenticateSession, requireAdmin, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { nama, nominal, periode, aktif = true } = req.body;
     const connection = await mysql.createConnection(dbConfig);
@@ -41,7 +40,7 @@ router.post('/', authenticateSession, requireAdmin, async (req, res) => {
 });
 
 // PUT - Update payment type (admin only)
-router.put('/:id', authenticateSession, requireAdmin, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { nama, nominal, periode } = req.body;
     const { id } = req.params;
@@ -82,7 +81,7 @@ router.put('/:id', authenticateSession, requireAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Payment type not found' });
     }
     
-    console.log('Payment type updated by:', req.user.username, 'Role:', req.user.role);
+    console.log('Payment type updated successfully');
     res.json({ message: 'Jenis pembayaran diperbarui' });
   } catch (err) {
     console.error('Update payment type error:', err);
@@ -91,7 +90,7 @@ router.put('/:id', authenticateSession, requireAdmin, async (req, res) => {
 });
 
 // DELETE - Delete payment type (admin only)
-router.delete('/:id', authenticateSession, requireAdmin, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -108,7 +107,7 @@ router.delete('/:id', authenticateSession, requireAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Payment type not found' });
     }
     
-    console.log('Payment type deleted by:', req.user.username, 'Role:', req.user.role);
+    console.log('Payment type deleted successfully');
     res.json({ message: 'Jenis pembayaran dihapus' });
   } catch (err) {
     console.error('Delete payment type error:', err);

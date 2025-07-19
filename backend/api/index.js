@@ -15,12 +15,15 @@ const corsOptions = {
     ? [
         'https://sipesda-deploy.vercel.app', // Frontend URL yang sudah ada
         'https://sipesda-deploy-git-main.vercel.app',  // Alternative domain
-        'https://sipesda-deploy-git-main-adityanvra.vercel.app' // Vercel branch URL
+        'https://sipesda-deploy-git-main-adityanvra.vercel.app', // Vercel branch URL
+        'https://sipesda-deploy-frontend.vercel.app', // Alternative frontend URL
+        'https://sipesda-deploy-frontend-git-main.vercel.app' // Alternative frontend branch URL
       ]
-    : ['http://localhost:5173', 'http://localhost:3000'],
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
