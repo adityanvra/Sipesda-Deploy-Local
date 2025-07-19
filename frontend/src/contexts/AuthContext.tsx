@@ -107,19 +107,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     delete axios.defaults.headers.common['Authorization'];
   };
 
-  // Login function
+    // Login function
   const login = async (username: string, password: string): Promise<void> => {
     try {
       setLoading(true);
       
-      // Try simple login endpoint first
-      try {
-        const response = await axios.post(`${API_BASE_URL}/simple-login`, {
-          username,
-          password
-        });
+      // Use simple login endpoint only
+      const response = await axios.post(`${API_BASE_URL}/simple-login`, {
+        username,
+        password
+      });
 
-        const { token: newToken, user: userData } = response.data;
+      const { token: newToken, user: userData } = response.data;
 
       // Save to state
       setToken(newToken);
@@ -132,34 +131,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Set default axios header
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-              console.log('Simple login successful:', userData.username, 'Role:', userData.role);
-        return;
-        
-      } catch (simpleError: any) {
-        console.warn('Simple login failed, trying users/login:', simpleError);
-        
-        // Try original users/login endpoint
-        const response = await axios.post(`${API_BASE_URL}/users/login`, {
-          username,
-          password
-        });
-
-        const { token: newToken, user: userData } = response.data;
-
-        // Save to state
-        setToken(newToken);
-        setUser(userData);
-
-        // Save to localStorage
-        localStorage.setItem('auth_token', newToken);
-        localStorage.setItem('auth_user', JSON.stringify(userData));
-
-        // Set default axios header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-
-        console.log('Users login successful:', userData.username, 'Role:', userData.role);
-        
-      } catch (error: any) {
+      console.log('Login successful:', userData.username, 'Role:', userData.role);
+      
+    } catch (error: any) {
       console.error('Login error:', error);
       
       if (error.response) {
