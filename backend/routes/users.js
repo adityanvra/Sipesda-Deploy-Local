@@ -176,7 +176,7 @@ router.post('/login', async (req, res) => {
         user: userWithoutPassword
       });
       
-    } catch (dbError: any) {
+    } catch (dbError) {
       console.error('Database authentication failed:', dbError);
       console.error('Error details:', dbError.code, dbError.errno, dbError.sqlMessage);
       
