@@ -101,11 +101,49 @@ app.get('/api/users/health', (req, res) => {
   });
 });
 
-// API routes
-app.use('/api/users', users);
-app.use('/api/students', students);
-app.use('/api/payments', payments);
-app.use('/api/payment-types', paymentTypes);
+// Fallback login endpoint for testing
+app.post('/api/users/login', (req, res) => {
+  res.json({
+    message: 'Fallback login endpoint reached',
+    body: req.body,
+    routes: {
+      users: !!users,
+      students: !!students,
+      payments: !!payments,
+      paymentTypes: !!paymentTypes
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// API routes with fallback
+if (users) {
+  app.use('/api/users', users);
+  console.log('✅ Users route mounted');
+} else {
+  console.log('❌ Users route not available');
+}
+
+if (students) {
+  app.use('/api/students', students);
+  console.log('✅ Students route mounted');
+} else {
+  console.log('❌ Students route not available');
+}
+
+if (payments) {
+  app.use('/api/payments', payments);
+  console.log('✅ Payments route mounted');
+} else {
+  console.log('❌ Payments route not available');
+}
+
+if (paymentTypes) {
+  app.use('/api/payment-types', paymentTypes);
+  console.log('✅ PaymentTypes route mounted');
+} else {
+  console.log('❌ PaymentTypes route not available');
+}
 
 app.get('/', (req, res) => {
   res.json({ 
