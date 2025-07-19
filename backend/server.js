@@ -33,6 +33,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Debug endpoint
+app.get('/api/debug', (req, res) => {
+  res.json({
+    message: 'Debug endpoint works!',
+    routes: {
+      users: !!users,
+      students: !!students,
+      payments: !!payments,
+      paymentTypes: !!paymentTypes
+    },
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      hasDbHost: !!process.env.DB_HOST,
+      hasDbPassword: !!process.env.DB_PASSWORD
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
