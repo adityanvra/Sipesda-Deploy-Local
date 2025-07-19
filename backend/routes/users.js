@@ -9,7 +9,7 @@ const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'sipesda_sekolah',
+  database: process.env.DB_NAME || 'railway',
   port: process.env.DB_PORT || 3306,
 };
 
@@ -115,73 +115,7 @@ router.post('/login', async (req, res) => {
 
 
 
-    // Check if environment variables are missing
-    if (!process.env.DB_HOST || !process.env.DB_PASSWORD) {
-      console.log('Environment variables missing, using fallback authentication');
-      
-      // Fallback authentication for testing
-      if (username === 'admin' && password === 'admin123') {
-        const fallbackUser = {
-          id: 1,
-          username: 'admin',
-          nama_lengkap: 'Administrator',
-          role: 'admin',
-          email: 'admin@sipesda.com',
-          no_hp: '08123456789',
-          aktif: true
-        };
 
-        const token = jwt.sign(
-          { 
-            id: fallbackUser.id, 
-            username: fallbackUser.username, 
-            role: fallbackUser.role,
-            nama_lengkap: fallbackUser.nama_lengkap 
-          },
-          JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-
-        console.log('Fallback login successful for admin');
-        return res.json({
-          message: 'Login berhasil (fallback mode)',
-          token,
-          user: fallbackUser
-        });
-      }
-
-      if (username === 'operator' && password === 'operator123') {
-        const fallbackUser = {
-          id: 2,
-          username: 'operator',
-          nama_lengkap: 'Operator',
-          role: 'operator',
-          email: 'operator@sipesda.com',
-          no_hp: '08123456788',
-          aktif: true
-        };
-
-        const token = jwt.sign(
-          { 
-            id: fallbackUser.id, 
-            username: fallbackUser.username, 
-            role: fallbackUser.role,
-            nama_lengkap: fallbackUser.nama_lengkap 
-          },
-          JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-
-        console.log('Fallback login successful for operator');
-        return res.json({
-          message: 'Login berhasil (fallback mode)',
-          token,
-          user: fallbackUser
-        });
-      }
-
-      return res.status(401).json({ error: 'Username atau password salah' });
-    }
 
     // Database authentication
     try {

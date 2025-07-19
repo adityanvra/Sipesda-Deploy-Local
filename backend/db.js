@@ -5,7 +5,7 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'sipesda',
+  database: process.env.DB_NAME || 'railway',
   port: process.env.DB_PORT || 3306,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   waitForConnections: true,
@@ -20,7 +20,7 @@ const pool = mysql.createPool({
 async function testConnection() {
   try {
     const connection = await pool.getConnection();
-    console.log(`✅ Tersambung ke MySQL (${process.env.DB_NAME || 'sipesda'})`);
+    console.log(`✅ Tersambung ke MySQL (${process.env.DB_NAME || 'railway'})`);
     connection.release();
   } catch (err) {
     console.error('❌ Koneksi ke database gagal:', err.message);
