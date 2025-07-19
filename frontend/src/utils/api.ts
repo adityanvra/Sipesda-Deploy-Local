@@ -48,20 +48,42 @@ export class API {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
+  private static isDemoMode(): boolean {
+    return localStorage.getItem('demo_mode') === 'true';
+  }
+
+  private static async makeRequest(method: string, url: string, data?: any, config?: any) {
+    // Skip API calls if in demo mode
+    if (this.isDemoMode()) {
+      console.log('Demo mode: Skipping API call to', url);
+      throw new Error('Demo mode: API calls disabled');
+    }
+
+    const headers = { ...this.getAuthHeaders(), ...config?.headers };
+    
+    try {
+      const response = await axios({
+        method,
+        url: `${API_BASE_URL}${url}`,
+        data,
+        headers,
+        ...config
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error(`API Error (${method} ${url}):`, error);
+      throw error;
+    }
+  }
+
   // Students API
   static async getStudents(): Promise<Student[]> {
-    const response = await axios.get(`${API_BASE_URL}/students`, {
-      headers: this.getAuthHeaders()
-    });
-    return response.data;
+    return this.makeRequest('GET', '/students');
   }
 
   static async getStudentByNisn(nisn: string): Promise<Student | null> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/students/nisn/${nisn}`, {
-        headers: this.getAuthHeaders()
-      });
-      return response.data;
+      return await this.makeRequest('GET', `/students/nisn/${nisn}`);
     } catch (error: any) {
       if (error.response?.status === 404) {
         return null;
@@ -71,104 +93,68 @@ export class API {
   }
 
   static async addStudent(student: Omit<Student, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
-    await axios.post(`${API_BASE_URL}/students`, student, {
-      headers: this.getAuthHeaders()
-    });
+    await this.makeRequest('POST', '/students', student);
   }
 
   static async updateStudent(id: string, student: Partial<Student>): Promise<void> {
-    await axios.put(`${API_BASE_URL}/students/${id}`, student, {
-      headers: this.getAuthHeaders()
-    });
+    await this.makeRequest('PUT', `/students/${id}`, student);
   }
 
   static async deleteStudent(id: string): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/students/${id}`, {
-      headers: this.getAuthHeaders()
-    });
+    await this.makeRequest('DELETE', `/students/${id}`);
   }
 
   // Payments API
   static async getPayments(): Promise<Payment[]> {
-    const response = await axios.get(`${API_BASE_URL}/payments`, {
-      headers: this.getAuthHeaders()
-    });
-    return response.data;
+    return this.makeRequest('GET', '/payments');
   }
 
   static async getPaymentsByStudent(studentNisn: string): Promise<Payment[]> {
-    const response = await axios.get(`${API_BASE_URL}/payments?student_nisn=${studentNisn}`, {
-      headers: this.getAuthHeaders()
-    });
-    return response.data;
+    return this.makeRequest('GET', `/payments?student_nisn=${studentNisn}`);
   }
 
   static async getPaymentsByMonth(studentNisn: string, month: number, year: number): Promise<Payment[]> {
-    const response = await axios.get(`${API_BASE_URL}/payments/by-month`, {
-      params: { studentNisn, month, year },
-      headers: this.getAuthHeaders()
-    });
-    return response.data;
+    return this.makeRequest('GET', `/payments/by-month?studentNisn=${studentNisn}&month=${month}&year=${year}`);
   }
 
   static async addPayment(payment: Omit<Payment, 'id' | 'created_at'>): Promise<void> {
-    await axios.post(`${API_BASE_URL}/payments`, payment, {
-      headers: this.getAuthHeaders()
-    });
+    await this.makeRequest('POST', '/payments', payment);
   }
 
   static async updatePayment(id: number, payment: Partial<Payment>): Promise<void> {
-    await axios.put(`${API_BASE_URL}/payments/${id}`, payment, {
-      headers: this.getAuthHeaders()
-    });
+    await this.makeRequest('PUT', `/payments/${id}`, payment);
   }
 
   static async deletePayment(id: number): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/payments/${id}`, {
-      headers: this.getAuthHeaders()
-    });
+    await this.makeRequest('DELETE', `/payments/${id}`);
   }
 
   // Payment Types API
   static async getPaymentTypes(): Promise<PaymentType[]> {
-    const response = await axios.get(`${API_BASE_URL}/payment-types`, {
-      headers: this.getAuthHeaders()
-    });
-    return response.data;
+    return this.makeRequest('GET', '/payment-types');
   }
 
   static async addPaymentType(paymentType: Omit<PaymentType, 'id'>): Promise<void> {
-    await axios.post(`${API_BASE_URL}/payment-types`, paymentType, {
-      headers: this.getAuthHeaders()
-    });
+    await this.makeRequest('POST', '/payment-types', paymentType);
   }
 
   static async updatePaymentType(id: number, paymentType: Partial<PaymentType>): Promise<void> {
-    await axios.put(`${API_BASE_URL}/payment-types/${id}`, paymentType, {
-      headers: this.getAuthHeaders()
-    });
+    await this.makeRequest('PUT', `/payment-types/${id}`, paymentType);
   }
 
   static async deletePaymentType(id: number): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/payment-types/${id}`, {
-      headers: this.getAuthHeaders()
-    });
+    await this.makeRequest('DELETE', `/payment-types/${id}`);
   }
 
   // User Profile API
   static async updateProfile(profileData: { nama_lengkap: string; email?: string; no_hp?: string }): Promise<any> {
-    const response = await axios.put(`${API_BASE_URL}/users/profile`, profileData, {
-      headers: this.getAuthHeaders()
-    });
-    return response.data;
+    return this.makeRequest('PUT', '/users/profile', profileData);
   }
 
   static async changePassword(oldPassword: string, newPassword: string): Promise<void> {
-    await axios.put(`${API_BASE_URL}/users/change-password`, {
+    await this.makeRequest('PUT', '/users/change-password', {
       oldPassword,
       newPassword
-    }, {
-      headers: this.getAuthHeaders()
     });
   }
 
