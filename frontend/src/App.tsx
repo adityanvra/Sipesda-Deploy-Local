@@ -9,6 +9,7 @@ import ManajemenSiswa from "./components/ManajemenSiswa";
 import TambahSiswa from "./components/TambahSiswa";
 import EditSiswa from "./components/EditSiswa";
 import UserManagement from "./components/UserManagement";
+import EditProfile from "./components/EditProfile";
 
 import iconUser from "./assets/user.png";
 import iconDashboard from "./assets/dashboard.png";
@@ -78,6 +79,8 @@ const AppContent = () => {
         } else {
           return isAdmin ? <AdminDashboard /> : <Dashboard />;
         }
+      case "profile":
+        return <EditProfile />;
       default:
         return isAdmin ? <AdminDashboard /> : <Dashboard />;
     }
@@ -198,6 +201,21 @@ const AppContent = () => {
                     </button>
                   </li>
                 )}
+                
+                {/* Profile menu - Available for all users */}
+                <li>
+                  <button
+                    onClick={() => setCurrentPage("profile")}
+                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors ${
+                      currentPage === "profile"
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-800 hover:bg-blue-100 hover:text-slate-900"
+                    }`}
+                  >
+                    <span className="text-gray-600 text-xl">⚙️</span>
+                    <span className="font-bold">Edit Profile</span>
+                  </button>
+                </li>
               </ul>
             </nav>
 

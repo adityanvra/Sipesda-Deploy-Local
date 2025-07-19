@@ -375,6 +375,102 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// PUT /api/users/profile - Update current user's profile
+router.put('/profile', authenticateToken, async (req, res) => {
+  try {
+    const { nama_lengkap, email, no_hp } = req.body;
+    const userId = req.user.id;
+
+    if (!nama_lengkap) {
+      return res.status(400).json({ error: 'Nama lengkap harus diisi' });
+    }
+
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Update user profile
+    const [result] = await connection.execute(
+      'UPDATE users SET nama_lengkap = ?, email = ?, no_hp = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [nama_lengkap, email || null, no_hp || null, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      await connection.end();
+      return res.status(404).json({ error: 'User tidak ditemukan' });
+    }
+
+    // Get updated user data
+    const [updatedUser] = await connection.execute(
+      'SELECT id, username, nama_lengkap, role, email, no_hp, aktif, last_login, created_at FROM users WHERE id = ?',
+      [userId]
+    );
+
+    await connection.end();
+
+    res.json({ 
+      message: 'Profile berhasil diupdate',
+      user: updatedUser[0]
+    });
+
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/users/change-password - Change current user's password
+router.put('/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Password lama dan baru harus diisi' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password baru minimal 6 karakter' });
+    }
+
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Get current user data
+    const [users] = await connection.execute(
+      'SELECT password FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (users.length === 0) {
+      await connection.end();
+      return res.status(404).json({ error: 'User tidak ditemukan' });
+    }
+
+    // Verify old password
+    const validOldPassword = await bcrypt.compare(oldPassword, users[0].password);
+    if (!validOldPassword) {
+      await connection.end();
+      return res.status(400).json({ error: 'Password lama salah' });
+    }
+
+    // Hash new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update password
+    const [result] = await connection.execute(
+      'UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [hashedPassword, userId]
+    );
+
+    await connection.end();
+
+    res.json({ message: 'Password berhasil diubah' });
+
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/users/validate-token - Validate JWT token
 router.post('/validate-token', authenticateToken, (req, res) => {
   res.json({ 

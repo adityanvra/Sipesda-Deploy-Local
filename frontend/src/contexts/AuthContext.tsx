@@ -19,6 +19,8 @@ interface AuthContextType {
   token: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  updateProfile: (profileData: { nama_lengkap: string; email?: string; no_hp?: string }) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isOperator: boolean;
@@ -150,6 +152,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('User logged out');
   };
 
+  // Update profile function
+  const updateProfile = async (profileData: { nama_lengkap: string; email?: string; no_hp?: string }): Promise<void> => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/users/profile`, profileData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Update user state with new data
+      const updatedUser = response.data.user;
+      setUser(updatedUser);
+      
+      // Update localStorage
+      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      
+      console.log('Profile updated successfully');
+      
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      
+      if (error.response) {
+        throw new Error(error.response.data.error || 'Profile update failed');
+      } else if (error.request) {
+        throw new Error('Tidak dapat terhubung ke server');
+      } else {
+        throw new Error('Terjadi kesalahan saat update profile');
+      }
+    }
+  };
+
+  // Change password function
+  const changePassword = async (oldPassword: string, newPassword: string): Promise<void> => {
+    try {
+      await axios.put(`${API_BASE_URL}/users/change-password`, {
+        oldPassword,
+        newPassword
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('Password changed successfully');
+      
+    } catch (error: any) {
+      console.error('Change password error:', error);
+      
+      if (error.response) {
+        throw new Error(error.response.data.error || 'Password change failed');
+      } else if (error.request) {
+        throw new Error('Tidak dapat terhubung ke server');
+      } else {
+        throw new Error('Terjadi kesalahan saat mengubah password');
+      }
+    }
+  };
+
   // Computed values
   const isAuthenticated = !!user && !!token;
   const isAdmin = user?.role === 'admin';
@@ -160,6 +216,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     login,
     logout,
+    updateProfile,
+    changePassword,
     isAuthenticated,
     isAdmin,
     isOperator,

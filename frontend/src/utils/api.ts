@@ -155,6 +155,23 @@ export class API {
     });
   }
 
+  // User Profile API
+  static async updateProfile(profileData: { nama_lengkap: string; email?: string; no_hp?: string }): Promise<any> {
+    const response = await axios.put(`${API_BASE_URL}/users/profile`, profileData, {
+      headers: this.getAuthHeaders()
+    });
+    return response.data;
+  }
+
+  static async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    await axios.put(`${API_BASE_URL}/users/change-password`, {
+      oldPassword,
+      newPassword
+    }, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
   // Excel Export/Import utilities
   static async exportToExcel(data: any[], filename: string): Promise<void> {
     const XLSX = await import('xlsx');
