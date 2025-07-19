@@ -24,7 +24,7 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       
-      // Try to get real data from API
+     // Try to get real data from API
       try {
         const [students, payments] = await Promise.all([
           API.getStudents(),
