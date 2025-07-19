@@ -23,13 +23,23 @@ router.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     env: {
       NODE_ENV: process.env.NODE_ENV,
-      DB_HOST: process.env.DB_HOST,
-      DB_USER: process.env.DB_USER,
-      DB_NAME: process.env.DB_NAME,
-      DB_PORT: process.env.DB_PORT,
+      DB_HOST: process.env.DB_HOST || 'NOT_SET',
+      DB_USER: process.env.DB_USER || 'NOT_SET',
+      DB_NAME: process.env.DB_NAME || 'NOT_SET',
+      DB_PORT: process.env.DB_PORT || 'NOT_SET',
       hasDBPassword: !!process.env.DB_PASSWORD,
       hasJWTSecret: !!process.env.JWT_SECRET
-    }
+    },
+    message: 'Environment variables check completed'
+  });
+});
+
+// GET /api/users/simple-test - Super simple test endpoint (no auth required)
+router.get('/simple-test', (req, res) => {
+  res.json({
+    message: 'Simple test endpoint works!',
+    timestamp: new Date().toISOString(),
+    hasBasicEnvVars: !!(process.env.DB_HOST && process.env.DB_PASSWORD)
   });
 });
 
