@@ -62,7 +62,30 @@ app.get('/api/debug', (req, res) => {
     hasDbPort: !!process.env.DB_PORT,
     hasJwtSecret: !!process.env.JWT_SECRET,
     dbHost: process.env.DB_HOST || 'not set',
-    dbPort: process.env.DB_PORT || 'not set'
+    dbPort: process.env.DB_PORT || 'not set',
+    allEnvVars: {
+      NODE_ENV: process.env.NODE_ENV,
+      DB_HOST: process.env.DB_HOST,
+      DB_USER: process.env.DB_USER,
+      DB_NAME: process.env.DB_NAME,
+      DB_PORT: process.env.DB_PORT,
+      hasPassword: !!process.env.DB_PASSWORD,
+      hasJWT: !!process.env.JWT_SECRET
+    }
+  });
+});
+
+// Simple test endpoint without database
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'Backend is working!',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV,
+    hasEnvVars: {
+      dbHost: !!process.env.DB_HOST,
+      dbPassword: !!process.env.DB_PASSWORD,
+      jwtSecret: !!process.env.JWT_SECRET
+    }
   });
 });
 
