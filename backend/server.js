@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+require('dotenv').config();
 
 const users = require('./routes/users');
 const students = require('./routes/students');
@@ -12,21 +13,61 @@ const app = express();
 // CORS configuration for production
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.vercel.app'] // Ganti dengan domain Vercel Anda
+    ? [
+        'https://sipesda-deploy.vercel.app',
+        'https://sipesda-deploy-git-main.vercel.app',
+        'https://sipesda-deploy-git-main-adityanvra.vercel.app'
+      ]
     : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
-app.use('/users', users);
-app.use('/students', students);
-app.use('/payments', payments);
-app.use('/payment-types', paymentTypes);
+// Add request logging for debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// API routes
+app.use('/api/users', users);
+app.use('/api/students', students);
+app.use('/api/payments', payments);
+app.use('/api/payment-types', paymentTypes);
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK',
+    message: '🚀 Sipesda Backend Berjalan dengan Baik!',
+    timestamp: new Date().toISOString()
+  });
+});
 
 app.get('/', (req, res) => {
-  res.send('🚀 Sipesda Backend Berjalan dengan Baik!');
+  res.json({ 
+    message: '🚀 Sipesda Backend Berjalan dengan Baik!',
+    docs: '/api/health',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// Error handling middleware (MUST BE LAST!)
+app.use((error, req, res, next) => {
+  console.error('Global error handler:', error);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
 });
 
 const PORT = process.env.PORT || 3000;
