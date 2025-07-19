@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const { authenticateToken, requireAdminOrOperator } = require('../middleware/auth');
+const { authenticateSession, requireAdminOrOperator } = require('../middleware/session');
 
 // Database connection
 const dbConfig = {
@@ -12,7 +12,7 @@ const dbConfig = {
   port: process.env.DB_PORT || 50251,
 };
 
-router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
+router.get('/', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [results] = await connection.execute('SELECT * FROM students ORDER BY created_at DESC');
@@ -24,7 +24,7 @@ router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
   }
 });
 
-router.get('/:id', authenticateToken, requireAdminOrOperator, async (req, res) => {
+router.get('/:id', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     
@@ -49,7 +49,7 @@ router.get('/:id', authenticateToken, requireAdminOrOperator, async (req, res) =
   }
 });
 
-router.get('/nisn/:nisn', authenticateToken, requireAdminOrOperator, async (req, res) => {
+router.get('/nisn/:nisn', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [results] = await connection.execute('SELECT * FROM students WHERE nisn = ?', [req.params.nisn]);
@@ -61,7 +61,7 @@ router.get('/nisn/:nisn', authenticateToken, requireAdminOrOperator, async (req,
   }
 });
 
-router.post('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
+router.post('/', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
     const data = req.body;
     console.log('Received data:', data);
@@ -107,7 +107,7 @@ router.post('/', authenticateToken, requireAdminOrOperator, async (req, res) => 
   }
 });
 
-router.put('/:id', authenticateToken, requireAdminOrOperator, async (req, res) => {
+router.put('/:id', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
     const data = req.body;
     console.log('Update by user:', req.user.username, 'Role:', req.user.role);
@@ -176,7 +176,7 @@ router.put('/:id', authenticateToken, requireAdminOrOperator, async (req, res) =
   }
 });
 
-router.delete('/:id', authenticateToken, requireAdminOrOperator, async (req, res) => {
+router.delete('/:id', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
     console.log('Delete by user:', req.user.username, 'Role:', req.user.role);
     

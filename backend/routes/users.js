@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 const mysql = require('mysql2/promise');
+const { authenticateSession, requireAdmin, getSessions } = require('../middleware/session');
 
 // Database connection
 const dbConfig = {
@@ -13,22 +14,8 @@ const dbConfig = {
 };
 
 // JWT Secret - Use Railway environment variable
-// Simple session storage (in production, use Redis or database)
-const sessions = new Map();
-
-// Session validation function
-const validateSession = (sessionId) => {
-  const session = sessions.get(sessionId);
-  if (!session) return null;
-  
-  // Check if session expired
-  if (new Date() > session.expiresAt) {
-    sessions.delete(sessionId);
-    return null;
-  }
-  
-  return session;
-};
+// Get sessions from middleware
+const sessions = getSessions();
 
 // GET /api/users/health - Health check endpoint for debugging (no auth required)
 router.get('/health', (req, res) => {
@@ -333,7 +320,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/users/profile - Get current user profile
-router.get('/profile', authenticateToken, async (req, res) => {
+router.get('/profile', authenticateSession, async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     
@@ -358,7 +345,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/users/:id - Update user (admin only)
-router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/:id', authenticateSession, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { username, nama_lengkap, role, email, no_hp } = req.body;
@@ -436,7 +423,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // PUT /api/users/:id/password - Change user password (admin only atau current user)
-router.put('/:id/password', authenticateToken, async (req, res) => {
+router.put('/:id/password', authenticateSession, async (req, res) => {
   try {
     const { id } = req.params;
     const { oldPassword, newPassword } = req.body;
@@ -498,7 +485,7 @@ router.put('/:id/password', authenticateToken, async (req, res) => {
 });
 
 // DELETE /api/users/:id - Delete user (admin only)
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:id', authenticateSession, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -529,7 +516,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // PUT /api/users/profile - Update current user's profile
-router.put('/profile', authenticateToken, async (req, res) => {
+router.put('/profile', authenticateSession, async (req, res) => {
   try {
     const { nama_lengkap, email, no_hp } = req.body;
     const userId = req.user.id;
@@ -571,7 +558,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/users/change-password - Change current user's password
-router.put('/change-password', authenticateToken, async (req, res) => {
+router.put('/change-password', authenticateSession, async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
     const userId = req.user.id;
@@ -624,8 +611,8 @@ router.put('/change-password', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/users/validate-token - Validate JWT token
-router.post('/validate-token', authenticateToken, (req, res) => {
+// POST /api/users/validate-session - Validate session
+router.post('/validate-session', authenticateSession, (req, res) => {
   res.json({ 
     valid: true, 
     user: {

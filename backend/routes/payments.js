@@ -1,205 +1,237 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateSession, requireAdminOrOperator } = require('../middleware/session');
 const mysql = require('mysql2/promise');
-const { authenticateToken, requireAdminOrOperator } = require('../middleware/auth');
 
 // Database connection
 const dbConfig = {
-  host: process.env.DB_HOST || 'ballast.proxy.rlwy.net',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'railway',
-  port: process.env.DB_PORT || 50251,
+  host: process.env.MYSQLHOST || 'mysql.railway.internal',
+  user: process.env.MYSQLUSER || 'root',
+  password: process.env.MYSQLPASSWORD || 'ZOXgksyyTFcwFYmXlJvcwTLpQtgNIBPn',
+  database: process.env.MYSQLDATABASE || 'railway',
+  port: process.env.MYSQLPORT || 3306
 };
 
-router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
+// GET - Read all payments (admin and operator can view)
+router.get('/', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
-    const studentId = req.query.student_id;
-    const studentNisn = req.query.student_nisn;
-    
     const connection = await mysql.createConnection(dbConfig);
     
-    let sql = 'SELECT * FROM payments';
-    let params = [];
-    
-    if (studentNisn) {
-      // Use NISN if provided
-      sql += ' WHERE student_nisn = ?';
-      params.push(studentNisn);
-    } else if (studentId) {
-      const [studentResult] = await connection.execute('SELECT nisn FROM students WHERE id = ?', [studentId]);
-      if (studentResult.length > 0) {
-        sql += ' WHERE student_nisn = ?';
-        params.push(studentResult[0].nisn);
-      } else {
-        await connection.end();
-        return res.json([]); // No student found
-      }
-    }
-    
-    sql += ' ORDER BY tanggal_pembayaran DESC, created_at DESC';
-    
-    const [results] = await connection.execute(sql, params);
+    const [rows] = await connection.execute(`
+      SELECT p.*, s.nama as nama_siswa, s.nisn, pt.nama as nama_payment_type, pt.nominal, pt.periode
+      FROM payments p
+      JOIN students s ON p.student_id = s.id
+      JOIN payment_types pt ON p.payment_type_id = pt.id
+      ORDER BY p.created_at DESC
+    `);
+
     await connection.end();
-    res.json(results);
-  } catch (err) {
-    console.error('Get payments error:', err);
-    res.status(500).json({ error: 'Database error', details: err.message });
+    res.json(rows);
+
+  } catch (error) {
+    console.error('Get payments error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.get('/by-month', authenticateToken, requireAdminOrOperator, async (req, res) => {
+// GET - Read payments by month (admin and operator can view)
+router.get('/by-month', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
-    const { studentId, studentNisn, month, year } = req.query;
-    let nisn = studentNisn;
-
-    const connection = await mysql.createConnection(dbConfig);
-
-    // If studentId is provided instead of NISN, convert it
-    if (!nisn && studentId) {
-      const [studentResult] = await connection.execute('SELECT nisn FROM students WHERE id = ?', [studentId]);
-      if (studentResult.length > 0) {
-        nisn = studentResult[0].nisn;
-      } else {
-        await connection.end();
-        return res.json([]); // No student found
-      }
+    const { month, year } = req.query;
+    
+    if (!month || !year) {
+      return res.status(400).json({ error: 'Month and year are required' });
     }
 
-    const query = `
-      SELECT * FROM payments 
-      WHERE student_nisn = ? 
-        AND MONTH(tanggal_pembayaran) = ? 
-        AND YEAR(tanggal_pembayaran) = ?
-        AND jenis_pembayaran LIKE '%SPP%'
-      ORDER BY tanggal_pembayaran DESC
-    `;
+    const connection = await mysql.createConnection(dbConfig);
+    
+    const [rows] = await connection.execute(`
+      SELECT p.*, s.nama as nama_siswa, s.nisn, pt.nama as nama_payment_type, pt.nominal, pt.periode
+      FROM payments p
+      JOIN students s ON p.student_id = s.id
+      JOIN payment_types pt ON p.payment_type_id = pt.id
+      WHERE MONTH(p.tanggal_bayar) = ? AND YEAR(p.tanggal_bayar) = ?
+      ORDER BY p.tanggal_bayar DESC
+    `, [month, year]);
 
-    const [results] = await connection.execute(query, [nisn, month, year]);
     await connection.end();
-    res.json(results);
-  } catch (err) {
-    console.error('Get payments by month error:', err);
-    res.status(500).json({ error: 'Database error', details: err.message });
+    res.json(rows);
+
+  } catch (error) {
+    console.error('Get payments by month error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.post('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
+// POST - Create new payment (admin and operator can create)
+router.post('/', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
     const data = req.body;
-    let studentNisn = data.student_nisn;
-    let studentId = data.student_id;
+    console.log('Create payment by user:', req.user.username, 'Role:', req.user.role);
+    console.log('Payment data:', data);
+
+    // Validate required fields
+    if (!data.student_id || !data.payment_type_id || !data.tanggal_bayar || !data.jumlah_bayar) {
+      return res.status(400).json({ error: 'Semua field harus diisi' });
+    }
 
     const connection = await mysql.createConnection(dbConfig);
+    
+    // Check if student exists
+    const [students] = await connection.execute(
+      'SELECT id FROM students WHERE id = ?',
+      [data.student_id]
+    );
 
-    // Support legacy student_id by converting to NISN
-    if (!studentNisn && studentId) {
-      const [studentResult] = await connection.execute('SELECT nisn FROM students WHERE id = ?', [studentId]);
-      if (studentResult.length > 0) {
-        studentNisn = studentResult[0].nisn;
-      } else {
-        await connection.end();
-        return res.status(400).json({ error: 'Student not found' });
-      }
-    }
-
-    // If we have NISN but no student_id, get student_id from NISN
-    if (studentNisn && !studentId) {
-      const [studentResult] = await connection.execute('SELECT id FROM students WHERE nisn = ?', [studentNisn]);
-      if (studentResult.length > 0) {
-        studentId = studentResult[0].id;
-      } else {
-        await connection.end();
-        return res.status(400).json({ error: 'Student not found' });
-      }
-    }
-
-    if (!studentNisn) {
+    if (students.length === 0) {
       await connection.end();
-      return res.status(400).json({ error: 'student_nisn is required' });
+      return res.status(400).json({ error: 'Siswa tidak ditemukan' });
     }
 
-    // Use the logged in user as petugas if not provided
-    const petugas = data.petugas || req.user.nama_lengkap || req.user.username;
+    // Check if payment type exists
+    const [paymentTypes] = await connection.execute(
+      'SELECT id FROM payment_types WHERE id = ?',
+      [data.payment_type_id]
+    );
 
-    const sql = `INSERT INTO payments (student_nisn, jenis_pembayaran, nominal, tanggal_pembayaran, status, keterangan, catatan, petugas, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
-    const values = [
-      studentNisn,
-      data.jenis_pembayaran, 
-      data.nominal, 
-      data.tanggal_pembayaran, 
-      data.status || 'lunas', 
-      data.keterangan || '', 
-      data.catatan || '', 
-      petugas
-    ];
-    const [result] = await connection.execute(sql, values);
+    if (paymentTypes.length === 0) {
+      await connection.end();
+      return res.status(400).json({ error: 'Jenis pembayaran tidak ditemukan' });
+    }
+
+    // Insert payment
+    const [result] = await connection.execute(
+      `INSERT INTO payments (student_id, payment_type_id, tanggal_bayar, jumlah_bayar, keterangan, created_by) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        data.student_id,
+        data.payment_type_id,
+        data.tanggal_bayar,
+        data.jumlah_bayar,
+        data.keterangan || null,
+        req.user.id
+      ]
+    );
+
     await connection.end();
-    
-    console.log('Payment added by:', req.user.username, 'Role:', req.user.role);
-    res.json({ message: 'Pembayaran ditambahkan', id: result.insertId });
-  } catch (err) {
-    console.error('Create payment error:', err);
-    res.status(500).json({ error: 'Database error', details: err.message });
-  }
-});
 
-router.put('/:id', authenticateToken, requireAdminOrOperator, async (req, res) => {
-  try {
-    const data = req.body;
-    
-    const connection = await mysql.createConnection(dbConfig);
-    
-    // Build update fields dynamically
-    const validFields = [];
-    const values = [];
-    
-    // Handle student_nisn conversion if student_id is provided
-    if (data.student_id && !data.student_nisn) {
-      const [studentResult] = await connection.execute('SELECT nisn FROM students WHERE id = ?', [data.student_id]);
-      if (studentResult.length > 0) {
-        data.student_nisn = studentResult[0].nisn;
-      }
-    }
-    
-    const allowedFields = ['student_nisn', 'jenis_pembayaran', 'nominal', 'tanggal_pembayaran', 'status', 'keterangan', 'catatan', 'petugas'];
-    
-    allowedFields.forEach(field => {
-      if (data.hasOwnProperty(field) && data[field] !== undefined) {
-        validFields.push(`${field} = ?`);
-        values.push(data[field]);
-      }
+    console.log('Payment created successfully, ID:', result.insertId);
+    res.status(201).json({ 
+      message: 'Pembayaran berhasil ditambahkan',
+      payment_id: result.insertId 
     });
-    
-    if (validFields.length === 0) {
-      await connection.end();
-      return res.status(400).json({ error: 'No valid fields to update' });
-    }
-    
-    const sql = `UPDATE payments SET ${validFields.join(', ')}, updated_at = NOW() WHERE id = ?`;
-    await connection.execute(sql, [...values, req.params.id]);
-    await connection.end();
-    
-    console.log('Payment updated by:', req.user.username, 'Role:', req.user.role);
-    res.json({ message: 'Pembayaran diperbarui' });
-  } catch (err) {
-    console.error('Update payment error:', err);
-    res.status(500).json({ error: 'Database error', details: err.message });
+
+  } catch (error) {
+    console.error('Create payment error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.delete('/:id', authenticateToken, requireAdminOrOperator, async (req, res) => {
+// PUT - Update payment (admin and operator can update)
+router.put('/:id', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
+    const { id } = req.params;
+    const data = req.body;
+    console.log('Update payment by user:', req.user.username, 'Role:', req.user.role);
+    console.log('Payment ID:', id, 'Data:', data);
+
+    // Validate required fields
+    if (!data.student_id || !data.payment_type_id || !data.tanggal_bayar || !data.jumlah_bayar) {
+      return res.status(400).json({ error: 'Semua field harus diisi' });
+    }
+
     const connection = await mysql.createConnection(dbConfig);
     
-    await connection.execute('DELETE FROM payments WHERE id = ?', [req.params.id]);
+    // Check if payment exists
+    const [payments] = await connection.execute(
+      'SELECT id FROM payments WHERE id = ?',
+      [id]
+    );
+
+    if (payments.length === 0) {
+      await connection.end();
+      return res.status(404).json({ error: 'Pembayaran tidak ditemukan' });
+    }
+
+    // Check if student exists
+    const [students] = await connection.execute(
+      'SELECT id FROM students WHERE id = ?',
+      [data.student_id]
+    );
+
+    if (students.length === 0) {
+      await connection.end();
+      return res.status(400).json({ error: 'Siswa tidak ditemukan' });
+    }
+
+    // Check if payment type exists
+    const [paymentTypes] = await connection.execute(
+      'SELECT id FROM payment_types WHERE id = ?',
+      [data.payment_type_id]
+    );
+
+    if (paymentTypes.length === 0) {
+      await connection.end();
+      return res.status(400).json({ error: 'Jenis pembayaran tidak ditemukan' });
+    }
+
+    // Update payment
+    const [result] = await connection.execute(
+      `UPDATE payments SET 
+       student_id = ?, 
+       payment_type_id = ?, 
+       tanggal_bayar = ?, 
+       jumlah_bayar = ?, 
+       keterangan = ?,
+       updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
+        data.student_id,
+        data.payment_type_id,
+        data.tanggal_bayar,
+        data.jumlah_bayar,
+        data.keterangan || null,
+        id
+      ]
+    );
+
     await connection.end();
+
+    console.log('Payment updated successfully');
+    res.json({ message: 'Pembayaran berhasil diupdate' });
+
+  } catch (error) {
+    console.error('Update payment error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE - Delete payment (admin and operator can delete)
+router.delete('/:id', authenticateSession, requireAdminOrOperator, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('Delete payment by user:', req.user.username, 'Role:', req.user.role);
+    console.log('Payment ID:', id);
+
+    const connection = await mysql.createConnection(dbConfig);
     
-    console.log('Payment deleted by:', req.user.username, 'Role:', req.user.role);
-    res.json({ message: 'Pembayaran dihapus' });
-  } catch (err) {
-    console.error('Delete payment error:', err);
-    res.status(500).json({ error: 'Database error', details: err.message });
+    const [result] = await connection.execute(
+      'DELETE FROM payments WHERE id = ?',
+      [id]
+    );
+
+    await connection.end();
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Pembayaran tidak ditemukan' });
+    }
+
+    console.log('Payment deleted successfully');
+    res.json({ message: 'Pembayaran berhasil dihapus' });
+
+  } catch (error) {
+    console.error('Delete payment error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

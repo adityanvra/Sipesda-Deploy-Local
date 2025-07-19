@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const { authenticateToken, requireAdminOrOperator, requireAdmin } = require('../middleware/auth');
+const { authenticateSession, requireAdminOrOperator, requireAdmin } = require('../middleware/session');
 
 // Database connection
 const dbConfig = {
@@ -13,7 +13,7 @@ const dbConfig = {
 };
 
 // GET - Read payment types (admin and operator can view)
-router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
+router.get('/', authenticateSession, requireAdminOrOperator, async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [results] = await connection.execute('SELECT * FROM payment_types ORDER BY nama');
@@ -26,7 +26,7 @@ router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
 });
 
 // POST - Create new payment type (admin only)
-router.post('/', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/', authenticateSession, requireAdmin, async (req, res) => {
   try {
       const { nama, nominal, periode } = req.body;
     
@@ -48,7 +48,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // PUT - Update payment type (admin only)
-router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/:id', authenticateSession, requireAdmin, async (req, res) => {
   try {
     const { nama, nominal, periode } = req.body;
     const { id } = req.params;
@@ -98,7 +98,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // DELETE - Delete payment type (admin only)
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:id', authenticateSession, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
