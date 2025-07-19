@@ -55,7 +55,29 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      res.status(400).json({ error: 'Invalid JSON' });
+      throw new Error('Invalid JSON');
+    }
+  }
+}));
+
+// Body parser error handling
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+    console.error('Body parser error:', error);
+    return res.status(400).json({ 
+      error: 'Invalid JSON in request body',
+      message: error.message
+    });
+  }
+  next();
+});
 
 // Add request logging for debugging
 app.use((req, res, next) => {
@@ -104,17 +126,40 @@ app.get('/api/users/health', (req, res) => {
 
 // Fallback login endpoint for testing
 app.post('/api/users/login', (req, res) => {
-  res.json({
-    message: 'Fallback login endpoint reached',
-    body: req.body,
-    routes: {
+  try {
+    console.log('Fallback login endpoint reached');
+    console.log('Request body:', req.body);
+    console.log('Routes status:', {
       users: !!users,
       students: !!students,
       payments: !!payments,
       paymentTypes: !!paymentTypes
-    },
-    timestamp: new Date().toISOString()
-  });
+    });
+    
+    res.json({
+      message: 'Fallback login endpoint reached',
+      body: req.body,
+      routes: {
+        users: !!users,
+        students: !!students,
+        payments: !!payments,
+        paymentTypes: !!paymentTypes
+      },
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        hasDbHost: !!process.env.DB_HOST,
+        hasDbPassword: !!process.env.DB_PASSWORD
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Fallback login error:', error);
+    res.status(500).json({
+      error: 'Fallback login error',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // API routes with fallback
@@ -162,9 +207,17 @@ app.use('*', (req, res) => {
 // Error handling middleware (MUST BE LAST!)
 app.use((error, req, res, next) => {
   console.error('Global error handler:', error);
+  console.error('Error stack:', error.stack);
+  console.error('Request path:', req.path);
+  console.error('Request method:', req.method);
+  
   res.status(500).json({ 
     error: 'Internal server error',
-    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    message: error.message,
+    path: req.path,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+    details: process.env.NODE_ENV === 'development' ? error.stack : undefined
   });
 });
 
