@@ -1,65 +1,45 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import RegisterPage from './RegisterPage';
+import { User } from '../types';
+import { useDatabaseContext } from '../contexts/DatabaseContext';
 
 interface LoginPageProps {
-  onLogin?: () => void;
+  onLogin: (user: User) => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const { login, loading: authLoading } = useAuth();
+  const { db, isLoading: isDbLoading } = useDatabaseContext();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!db || isDbLoading) return;
     
     setLoading(true);
     setError('');
 
     try {
-      await login(username, password);
-      
-      // Call optional onLogin callback
-      if (onLogin) {
-        onLogin();
+      const user = await db.authenticateUser(username, password);
+      if (user) {
+        onLogin(user);
+      } else {
+        setError('Username atau password salah');
       }
-    } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan saat login');
+    } catch (err) {
+      setError('Terjadi kesalahan saat login');
     } finally {
       setLoading(false);
     }
   };
 
-  if (authLoading) {
+  if (isDbLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#226398] via-[#012246] to-[#254E70] flex items-center justify-center p-4">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
+        <div className="text-white">Loading...</div>
       </div>
-    );
-  }
-
-  // Show register page if showRegister is true
-  if (showRegister) {
-    return (
-      <RegisterPage 
-        onBack={() => setShowRegister(false)}
-        onSuccess={() => {
-          setShowRegister(false);
-          setError('');
-          // Show success message on login page
-          setTimeout(() => {
-            setError('');
-          }, 3000);
-        }}
-      />
     );
   }
 
@@ -115,13 +95,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           {/* Login Button */}
           <button
             type="submit"
-            disabled={loading || authLoading}
+            disabled={loading || !db}
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Masuk...' : 'Login'}
           </button>
 
-          {/* Remember Me & Register */}
+          {/* Remember Me & Forgot Password */}
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center text-white/80">
               <input
@@ -132,36 +112,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               />
               Ingat Saya
             </label>
-            <button
+            {/* <button
               type="button"
-              onClick={() => setShowRegister(true)}
+              onClick={onRegister}
               className="text-white/80 hover:text-white underline"
             >
               Daftar Akun
-            </button>
+            </button> */}
           </div>
         </form>
-
-        {/* Registration Info */}
-        <div className="mt-6 text-center">
-          <p className="text-white/60 text-xs mb-2">
-            Belum punya akun?
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowRegister(true)}
-            className="text-blue-300 hover:text-blue-200 text-sm font-semibold underline"
-          >
-            Daftar sebagai User Baru
-          </button>
-        </div>
-
-        {/* System Info */}
-        <div className="mt-4 text-center">
-          <p className="text-white/40 text-xs">
-            SIPESDA v2.0 • Role-Based Access Control
-          </p>
-        </div>
       </div>
     </div>
   );

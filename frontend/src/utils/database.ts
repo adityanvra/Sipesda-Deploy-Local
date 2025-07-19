@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { User, Student, Payment, PaymentType } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sipesda-deploy-backend.vercel.app/api';
+// Konfigurasi untuk deployment lokal
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+// Untuk akses dari komputer lain di jaringan sekolah, ganti dengan IP server:
+// const API_BASE_URL = 'http://192.168.1.100:5000/api';
 
 class DatabaseManager {
   // USER

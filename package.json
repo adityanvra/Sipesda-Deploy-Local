@@ -1,26 +1,18 @@
 {
-  "name": "sipesda-deploy",
-  "version": "1.0.0",
-  "description": "SIPESDA School Management System",
-  "main": "backend/server.js",
-  "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start",
-    "vercel-build": "cd frontend && npm run build"
-  },
   "dependencies": {
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "mysql2": "^3.14.1",
     "react-router-dom": "^7.6.2"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+  "name": "project_mpti",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["school", "management", "sipesda"],
-  "author": "Aditya",
-  "license": "ISC"
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }
