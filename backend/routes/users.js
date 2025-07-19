@@ -113,7 +113,8 @@ router.post('/login', async (req, res) => {
         host: dbConfig.host,
         user: dbConfig.user,
         database: dbConfig.database,
-        port: dbConfig.port
+        port: dbConfig.port,
+        hasPassword: !!dbConfig.password
       });
 
       const connection = await mysql.createConnection(dbConfig);
@@ -177,7 +178,25 @@ router.post('/login', async (req, res) => {
       
     } catch (dbError: any) {
       console.error('Database authentication failed:', dbError);
-      return res.status(401).json({ error: 'Username atau password salah' });
+      console.error('Error details:', dbError.code, dbError.errno, dbError.sqlMessage);
+      
+      // More specific error handling
+      if (dbError.code === 'ECONNREFUSED') {
+        return res.status(500).json({ error: 'Database connection failed' });
+      }
+      
+      if (dbError.code === 'ER_ACCESS_DENIED_ERROR') {
+        return res.status(500).json({ error: 'Database access denied' });
+      }
+      
+      if (dbError.code === 'ER_BAD_DB_ERROR') {
+        return res.status(500).json({ error: 'Database not found' });
+      }
+      
+      return res.status(500).json({ 
+        error: 'Database error',
+        details: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+      });
     }
 
   } catch (error) {
