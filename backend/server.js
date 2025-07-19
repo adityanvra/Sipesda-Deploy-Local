@@ -33,12 +33,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// API routes
-app.use('/api/users', users);
-app.use('/api/students', students);
-app.use('/api/payments', payments);
-app.use('/api/payment-types', paymentTypes);
-
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -56,6 +50,12 @@ app.get('/api/users/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// API routes
+app.use('/api/users', users);
+app.use('/api/students', students);
+app.use('/api/payments', payments);
+app.use('/api/payment-types', paymentTypes);
 
 app.get('/', (req, res) => {
   res.json({ 
