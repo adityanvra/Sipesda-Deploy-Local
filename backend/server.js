@@ -124,43 +124,7 @@ app.get('/api/users/health', (req, res) => {
   });
 });
 
-// Fallback login endpoint for testing
-app.post('/api/users/login', (req, res) => {
-  try {
-    console.log('Fallback login endpoint reached');
-    console.log('Request body:', req.body);
-    console.log('Routes status:', {
-      users: !!users,
-      students: !!students,
-      payments: !!payments,
-      paymentTypes: !!paymentTypes
-    });
-    
-    res.json({
-      message: 'Fallback login endpoint reached',
-      body: req.body,
-      routes: {
-        users: !!users,
-        students: !!students,
-        payments: !!payments,
-        paymentTypes: !!paymentTypes
-      },
-      env: {
-        NODE_ENV: process.env.NODE_ENV,
-        hasDbHost: !!process.env.DB_HOST,
-        hasDbPassword: !!process.env.DB_PASSWORD
-      },
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Fallback login error:', error);
-    res.status(500).json({
-      error: 'Fallback login error',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
+
 
 // API routes with fallback
 if (users) {

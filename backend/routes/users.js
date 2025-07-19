@@ -72,7 +72,10 @@ router.post('/test-register', (req, res) => {
 // POST /api/users/login - User login
 router.post('/login', async (req, res) => {
   try {
-    console.log('Login attempt started');
+    console.log('=== LOGIN ATTEMPT STARTED ===');
+    console.log('Request body:', req.body);
+    console.log('Request headers:', req.headers);
+    
     const { username, password } = req.body;
     console.log('Login request for username:', username);
 
