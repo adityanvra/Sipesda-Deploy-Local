@@ -35,15 +35,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add error handling middleware
-app.use((error, req, res, next) => {
-  console.error('Global error handler:', error);
-  res.status(500).json({ 
-    error: 'Internal server error',
-    details: process.env.NODE_ENV === 'development' ? error.message : undefined
-  });
-});
-
 // Routes
 app.use('/api/users', users);
 app.use('/api/students', students);
@@ -145,6 +136,15 @@ app.get('/', (req, res) => {
     message: '🚀 Sipesda Backend API berjalan di Vercel!',
     docs: '/api',
     timestamp: new Date().toISOString()
+  });
+});
+
+// Add error handling middleware (MUST BE LAST!)
+app.use((error, req, res, next) => {
+  console.error('Global error handler:', error);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
   });
 });
 
