@@ -103,6 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('demo_mode');
     delete axios.defaults.headers.common['Authorization'];
   };
 
@@ -111,91 +112,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       
-      // Frontend-only demo mode for testing
-      if (username === 'admin' && password === 'admin123') {
-        const demoUser = {
-          id: 1,
-          username: 'admin',
-          nama_lengkap: 'Administrator Demo',
-          role: 'admin' as const,
-          email: 'admin@sipesda.demo',
-          no_hp: '08123456789',
-          aktif: true
-        };
-        
-        const demoToken = 'demo_token_' + Date.now();
-        
-        // Save to state
-        setToken(demoToken);
-        setUser(demoUser);
+      const response = await axios.post(`${API_BASE_URL}/users/login`, {
+        username,
+        password
+      });
 
-        // Save to localStorage
-        localStorage.setItem('auth_token', demoToken);
-        localStorage.setItem('auth_user', JSON.stringify(demoUser));
-        localStorage.setItem('demo_mode', 'true');
+      const { token: newToken, user: userData } = response.data;
 
-        // Set default axios header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${demoToken}`;
+      // Save to state
+      setToken(newToken);
+      setUser(userData);
 
-        console.log('Frontend demo login successful:', demoUser.username, 'Role:', demoUser.role);
-        return;
-      }
-      
-      if (username === 'operator' && password === 'operator123') {
-        const demoUser = {
-          id: 2,
-          username: 'operator',
-          nama_lengkap: 'Operator Demo',
-          role: 'operator' as const,
-          email: 'operator@sipesda.demo',
-          no_hp: '08123456788',
-          aktif: true
-        };
-        
-        const demoToken = 'demo_token_' + Date.now();
-        
-        // Save to state
-        setToken(demoToken);
-        setUser(demoUser);
+      // Save to localStorage
+      localStorage.setItem('auth_token', newToken);
+      localStorage.setItem('auth_user', JSON.stringify(userData));
 
-        // Save to localStorage
-        localStorage.setItem('auth_token', demoToken);
-        localStorage.setItem('auth_user', JSON.stringify(demoUser));
-        localStorage.setItem('demo_mode', 'true');
+      // Set default axios header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-        // Set default axios header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${demoToken}`;
-
-        console.log('Frontend demo login successful:', demoUser.username, 'Role:', demoUser.role);
-        return;
-      }
-      
-      // Try backend login if not demo credentials
-      try {
-        const response = await axios.post(`${API_BASE_URL}/users/login`, {
-          username,
-          password
-        });
-
-        const { token: newToken, user: userData } = response.data;
-
-        // Save to state
-        setToken(newToken);
-        setUser(userData);
-
-        // Save to localStorage
-        localStorage.setItem('auth_token', newToken);
-        localStorage.setItem('auth_user', JSON.stringify(userData));
-
-        // Set default axios header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-
-        console.log('Backend login successful:', userData.username, 'Role:', userData.role);
-        
-      } catch (backendError: any) {
-        console.error('Backend login failed:', backendError);
-        throw new Error('Username atau password salah');
-      }
+      console.log('Login successful:', userData.username, 'Role:', userData.role);
       
     } catch (error: any) {
       console.error('Login error:', error);
