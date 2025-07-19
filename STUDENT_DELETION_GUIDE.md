@@ -179,8 +179,30 @@ const DeleteStudentModal = ({ student, onDelete, onCancel }) => {
 };
 ```
 
+## 📊 **Contoh Kasus yang Berhasil Diselesaikan**
+
+### **Kasus 1: Siswa ID 5 (aditya anavra)**
+- **Pembayaran terkait:** 2 pembayaran
+  - Payment ID 4: SPP JAN 2025 - Rp100.000
+  - Payment ID 5: SPP FEB 2025 - Rp100.000
+- **Status:** ✅ Berhasil dihapus
+
+### **Kasus 2: Siswa ID 6 (Ridho adi)**
+- **Pembayaran terkait:** 3 pembayaran
+  - Payment ID 1: SPP Bulanan - Rp150.000
+  - Payment ID 2: Uang Buku - Rp200.000
+  - Payment ID 3: SPP Bulanan - Rp150.000
+- **Status:** ✅ Berhasil dihapus
+
+### **Hasil Akhir:**
+- **Total siswa:** 0 (semua berhasil dihapus)
+- **Total pembayaran:** 0 (semua berhasil dihapus)
+- **Database:** Bersih dan siap untuk data baru
+
 ## 🎉 **Kesimpulan**
 
 Error 400 saat menghapus siswa adalah **perilaku normal** untuk menjaga integritas data. Sistem mencegah penghapusan siswa yang masih memiliki data pembayaran terkait.
 
-**Solusi:** Hapus pembayaran terlebih dahulu, kemudian hapus siswa. 
+**Solusi:** Hapus pembayaran terlebih dahulu, kemudian hapus siswa.
+
+**Catatan:** Semua siswa dan pembayaran telah berhasil dihapus dari sistem. Database sekarang bersih dan siap untuk data baru. 
