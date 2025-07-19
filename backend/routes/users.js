@@ -106,70 +106,7 @@ router.post('/login', async (req, res) => {
 
 
 
-    // Hardcoded authentication for testing
-    if (username === 'admin' && password === 'admin123') {
-      const hardcodedUser = {
-        id: 1,
-        username: 'admin',
-        nama_lengkap: 'Administrator',
-        role: 'admin',
-        email: 'admin@sipesda.com',
-        no_hp: '08123456789',
-        aktif: true
-      };
-
-      const token = jwt.sign(
-        { 
-          id: hardcodedUser.id, 
-          username: hardcodedUser.username, 
-          role: hardcodedUser.role,
-          nama_lengkap: hardcodedUser.nama_lengkap 
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      console.log('Hardcoded login successful for admin');
-      res.json({
-        message: 'Login berhasil',
-        token,
-        user: hardcodedUser
-      });
-      return;
-    }
-
-    if (username === 'operator' && password === 'operator123') {
-      const hardcodedUser = {
-        id: 2,
-        username: 'operator',
-        nama_lengkap: 'Operator',
-        role: 'operator',
-        email: 'operator@sipesda.com',
-        no_hp: '08123456788',
-        aktif: true
-      };
-
-      const token = jwt.sign(
-        { 
-          id: hardcodedUser.id, 
-          username: hardcodedUser.username, 
-          role: hardcodedUser.role,
-          nama_lengkap: hardcodedUser.nama_lengkap 
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      console.log('Hardcoded login successful for operator');
-      res.json({
-        message: 'Login berhasil',
-        token,
-        user: hardcodedUser
-      });
-      return;
-    }
-
-    // Try database authentication if not hardcoded
+    // Database authentication
     try {
       console.log('Creating database connection...');
       console.log('DB Config:', {

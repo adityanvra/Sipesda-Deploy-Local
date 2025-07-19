@@ -57,75 +57,16 @@ app.get('/api/debug', (req, res) => {
   });
 });
 
-// Simple database test
-app.get('/api/db-test', async (req, res) => {
-  try {
-    const mysql = require('mysql2/promise');
-    const dbConfig = {
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT || 3306,
-    };
-    
-    console.log('Testing DB connection with config:', {
-      host: dbConfig.host,
-      user: dbConfig.user,
-      database: dbConfig.database,
-      port: dbConfig.port,
-      hasPassword: !!dbConfig.password
-    });
-    
-    const connection = await mysql.createConnection(dbConfig);
-    await connection.execute('SELECT 1 as test');
-    await connection.end();
-    
-    res.json({ status: 'Database connection successful' });
-  } catch (error) {
-    console.error('Database test error:', error);
-    res.status(500).json({ 
-      error: 'Database connection failed',
-      details: error.message,
-      code: error.code 
-    });
-  }
+// Simple test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'Backend is working!',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV
+  });
 });
 
-// Database connection test
-app.get('/api/db-test', async (req, res) => {
-  try {
-    const mysql = require('mysql2/promise');
-    const dbConfig = {
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT || 3306,
-    };
-    
-    console.log('Testing DB connection with config:', {
-      host: dbConfig.host,
-      user: dbConfig.user,
-      database: dbConfig.database,
-      port: dbConfig.port,
-      hasPassword: !!dbConfig.password
-    });
-    
-    const connection = await mysql.createConnection(dbConfig);
-    await connection.execute('SELECT 1 as test');
-    await connection.end();
-    
-    res.json({ status: 'Database connection successful' });
-  } catch (error) {
-    console.error('Database test error:', error);
-    res.status(500).json({ 
-      error: 'Database connection failed',
-      details: error.message,
-      code: error.code 
-    });
-  }
-});
+
 
 // Routes
 app.use('/api/users', users);
