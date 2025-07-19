@@ -10,10 +10,6 @@
     {
       "src": "/api/(.*)",
       "dest": "/backend/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/backend/server.js"
     }
   ],
   "env": {
