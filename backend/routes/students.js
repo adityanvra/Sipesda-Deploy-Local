@@ -33,7 +33,10 @@ router.get('/:id', async (req, res) => {
     console.log('📋 Environment check:', {
       NODE_ENV: process.env.NODE_ENV,
       MYSQLHOST: process.env.MYSQLHOST || 'not set',
-      MYSQLDATABASE: process.env.MYSQLDATABASE || 'not set'
+      MYSQLDATABASE: process.env.MYSQLDATABASE || 'not set',
+      MYSQLPORT: process.env.MYSQLPORT || 'not set',
+      MYSQLUSER: process.env.MYSQLUSER || 'not set',
+      MYSQLPASSWORD: process.env.MYSQLPASSWORD ? 'set' : 'not set'
     });
     
     // Validate input
