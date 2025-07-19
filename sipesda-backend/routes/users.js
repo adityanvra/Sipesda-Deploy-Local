@@ -9,7 +9,7 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const dbConfig = {
   host: process.env.DB_HOST || 'ballast.proxy.rlwy.net',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'ZOXgksyyTFcwFYmXlJvcwTLpQtgNIBPn',
+  password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'railway',
   port: process.env.DB_PORT || 50251,
 };
