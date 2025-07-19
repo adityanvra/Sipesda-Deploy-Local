@@ -115,10 +115,11 @@ router.post('/login', async (req, res) => {
       await connection.execute('SELECT 1 as test');
       console.log('Database connection test successful');
       
-      const [rows] = await connection.execute(
-        'SELECT * FROM users WHERE username = ?',
-        [username]
-      );
+      const query = 'SELECT * FROM users WHERE username = ?';
+      console.log('Executing query:', query);
+      console.log('Query parameters:', [username]);
+      
+      const [rows] = await connection.execute(query, [username]);
       console.log('Query executed, found users:', rows.length);
 
       await connection.end();
