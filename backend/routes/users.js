@@ -45,32 +45,51 @@ const requireAdmin = (req, res, next) => {
 // POST /api/users/login - User login
 router.post('/login', async (req, res) => {
   try {
+    console.log('Login attempt started');
     const { username, password } = req.body;
+    console.log('Login request for username:', username);
 
     if (!username || !password) {
+      console.log('Missing username or password');
       return res.status(400).json({ error: 'Username dan password harus diisi' });
     }
 
+    console.log('Creating database connection...');
+    console.log('DB Config:', {
+      host: dbConfig.host,
+      user: dbConfig.user,
+      database: dbConfig.database,
+      port: dbConfig.port
+    });
+
     const connection = await mysql.createConnection(dbConfig);
+    console.log('Database connection established');
     
     const [rows] = await connection.execute(
       'SELECT * FROM users WHERE username = ? AND aktif = TRUE',
       [username]
     );
+    console.log('Query executed, found users:', rows.length);
 
     await connection.end();
 
     if (rows.length === 0) {
+      console.log('No user found with username:', username);
       return res.status(401).json({ error: 'Username atau password salah' });
     }
 
     const user = rows[0];
+    console.log('User found, verifying password...');
+    
     const validPassword = await bcrypt.compare(password, user.password);
+    console.log('Password verification result:', validPassword);
 
     if (!validPassword) {
+      console.log('Invalid password for user:', username);
       return res.status(401).json({ error: 'Username atau password salah' });
     }
 
+    console.log('Password valid, updating last login...');
     // Update last login
     const connectionUpdate = await mysql.createConnection(dbConfig);
     await connectionUpdate.execute(
@@ -79,6 +98,7 @@ router.post('/login', async (req, res) => {
     );
     await connectionUpdate.end();
 
+    console.log('Creating JWT token...');
     // Create JWT token
     const token = jwt.sign(
       { 
@@ -94,6 +114,7 @@ router.post('/login', async (req, res) => {
     // Don't send password in response
     const { password: _, ...userWithoutPassword } = user;
 
+    console.log('Login successful for user:', username);
     res.json({
       message: 'Login berhasil',
       token,
@@ -101,25 +122,47 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Login error details:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
+    
+    // More specific error handling
+    if (error.code === 'ECONNREFUSED') {
+      console.error('Database connection refused');
+      return res.status(500).json({ error: 'Database connection failed' });
+    }
+    
+    if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.error('Database access denied');
+      return res.status(500).json({ error: 'Database access denied' });
+    }
+    
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
-// POST /api/users/register - User registration (admin only atau initial setup)
+// POST /api/users/register - User registration (public atau admin)
 router.post('/register', async (req, res) => {
   try {
+    console.log('Registration attempt started');
     const { username, password, nama_lengkap, role, email, no_hp } = req.body;
+    console.log('Registration request for username:', username);
 
     if (!username || !password || !nama_lengkap) {
+      console.log('Missing required fields');
       return res.status(400).json({ error: 'Username, password, dan nama lengkap harus diisi' });
     }
 
     // Validate role
     if (role && !['admin', 'operator'].includes(role)) {
+      console.log('Invalid role:', role);
       return res.status(400).json({ error: 'Role harus admin atau operator' });
     }
 
+    console.log('Creating database connection for registration...');
     const connection = await mysql.createConnection(dbConfig);
     
     // Check if username already exists
@@ -130,13 +173,16 @@ router.post('/register', async (req, res) => {
 
     if (existingUsers.length > 0) {
       await connection.end();
+      console.log('Username already exists:', username);
       return res.status(400).json({ error: 'Username sudah digunakan' });
     }
 
+    console.log('Hashing password...');
     // Hash password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    console.log('Inserting new user...');
     // Insert new user
     const [result] = await connection.execute(
       `INSERT INTO users (username, password, nama_lengkap, role, email, no_hp, aktif) 
@@ -146,14 +192,26 @@ router.post('/register', async (req, res) => {
 
     await connection.end();
 
+    console.log('Registration successful for user:', username);
     res.status(201).json({ 
       message: 'User berhasil didaftarkan',
       user_id: result.insertId 
     });
 
   } catch (error) {
-    console.error('Register error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Register error details:', error);
+    console.error('Error stack:', error.stack);
+    
+    // More specific error handling
+    if (error.code === 'ECONNREFUSED') {
+      console.error('Database connection refused during registration');
+      return res.status(500).json({ error: 'Database connection failed' });
+    }
+    
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -480,6 +538,23 @@ router.post('/validate-token', authenticateToken, (req, res) => {
       username: req.user.username,
       role: req.user.role,
       nama_lengkap: req.user.nama_lengkap
+    }
+  });
+});
+
+// GET /api/users/health - Health check endpoint for debugging
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      DB_HOST: process.env.DB_HOST,
+      DB_USER: process.env.DB_USER,
+      DB_NAME: process.env.DB_NAME,
+      DB_PORT: process.env.DB_PORT,
+      hasDBPassword: !!process.env.DB_PASSWORD,
+      hasJWTSecret: !!process.env.JWT_SECRET
     }
   });
 });

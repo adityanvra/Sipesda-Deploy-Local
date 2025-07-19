@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import RegisterPage from './RegisterPage';
 
 interface LoginPageProps {
   onLogin?: () => void;
@@ -12,6 +13,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +43,23 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           <p>Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // Show register page if showRegister is true
+  if (showRegister) {
+    return (
+      <RegisterPage 
+        onBack={() => setShowRegister(false)}
+        onSuccess={() => {
+          setShowRegister(false);
+          setError('');
+          // Show success message on login page
+          setTimeout(() => {
+            setError('');
+          }, 3000);
+        }}
+      />
     );
   }
 
@@ -102,7 +121,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             {loading ? 'Masuk...' : 'Login'}
           </button>
 
-          {/* Remember Me & Forgot Password */}
+          {/* Remember Me & Register */}
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center text-white/80">
               <input
@@ -113,15 +132,36 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               />
               Ingat Saya
             </label>
-            {/* <button
+            <button
               type="button"
-              onClick={onRegister}
+              onClick={() => setShowRegister(true)}
               className="text-white/80 hover:text-white underline"
             >
               Daftar Akun
-            </button> */}
+            </button>
           </div>
         </form>
+
+        {/* Registration Info */}
+        <div className="mt-6 text-center">
+          <p className="text-white/60 text-xs mb-2">
+            Belum punya akun?
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowRegister(true)}
+            className="text-blue-300 hover:text-blue-200 text-sm font-semibold underline"
+          >
+            Daftar sebagai User Baru
+          </button>
+        </div>
+
+        {/* System Info */}
+        <div className="mt-4 text-center">
+          <p className="text-white/40 text-xs">
+            SIPESDA v2.0 • Role-Based Access Control
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -55,10 +55,8 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onBack, onSuccess }) => {
           role: formData.role,
           email: formData.email || undefined,
           no_hp: formData.no_hp || undefined
-        },
-        token ? {
-          headers: { Authorization: `Bearer ${token}` }
-        } : {}
+        }
+        // Note: Public registration doesn't require authentication
       );
 
       setSuccess('User registered successfully!');
