@@ -16,7 +16,7 @@ const dbConfig = {
 router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [results] = await connection.execute('SELECT * FROM payment_types WHERE aktif = 1 ORDER BY nama');
+    const [results] = await connection.execute('SELECT * FROM payment_types ORDER BY nama');
     await connection.end();
     res.json(results);
   } catch (err) {
@@ -28,15 +28,15 @@ router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
 // POST - Create new payment type (admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-  const { nama, nominal, periode, aktif = true } = req.body;
+      const { nama, nominal, periode } = req.body;
     
     if (!nama || !nominal || !periode) {
       return res.status(400).json({ error: 'Nama, nominal, dan periode harus diisi' });
     }
     
     const connection = await mysql.createConnection(dbConfig);
-  const sql = 'INSERT INTO payment_types (nama, nominal, periode, aktif) VALUES (?, ?, ?, ?)';
-    const [result] = await connection.execute(sql, [nama, nominal, periode, aktif]);
+      const sql = 'INSERT INTO payment_types (nama, nominal, periode) VALUES (?, ?, ?)';
+    const [result] = await connection.execute(sql, [nama, nominal, periode]);
     await connection.end();
     
     console.log('Payment type created by:', req.user.username, 'Role:', req.user.role);
@@ -50,7 +50,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // PUT - Update payment type (admin only)
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { nama, nominal, periode, aktif } = req.body;
+    const { nama, nominal, periode } = req.body;
     const { id } = req.params;
     
     const connection = await mysql.createConnection(dbConfig);
@@ -71,10 +71,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       validFields.push('periode = ?');
       values.push(periode);
     }
-    if (aktif !== undefined) {
-      validFields.push('aktif = ?');
-      values.push(aktif);
-    }
+
     
     if (validFields.length === 0) {
       await connection.end();
@@ -107,9 +104,9 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     
     const connection = await mysql.createConnection(dbConfig);
     
-    // Soft delete - set aktif to false
+    // Hard delete
     const [result] = await connection.execute(
-      'UPDATE payment_types SET aktif = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'DELETE FROM payment_types WHERE id = ?',
       [id]
     );
     await connection.end();
