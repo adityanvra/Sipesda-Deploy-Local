@@ -48,17 +48,7 @@ export class API {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  private static isDemoMode(): boolean {
-    return localStorage.getItem('demo_mode') === 'true';
-  }
-
   private static async makeRequest(method: string, url: string, data?: any, config?: any) {
-    // Skip API calls if in demo mode
-    if (this.isDemoMode()) {
-      console.log('Demo mode: Skipping API call to', url);
-      throw new Error('Demo mode: API calls disabled');
-    }
-
     const headers = { ...this.getAuthHeaders(), ...config?.headers };
     
     try {
