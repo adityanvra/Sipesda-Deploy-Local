@@ -150,26 +150,84 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    // Delete by NISN (primary key) if possible, otherwise by ID
-    let whereClause = 'nisn = ?';
-    let whereValue = req.params.id;
+    const { id } = req.params;
+    console.log('Attempting to delete student with ID/NISN:', id);
     
-    if (req.params.id.length <= 10) {
+    // First, check if the student exists
+    let student = null;
+    let whereClause = 'nisn = ?';
+    let whereValue = id;
+    
+    // If ID is short (likely numeric ID), try to find by ID first
+    if (id.length <= 10 && /^\d+$/.test(id)) {
       try {
-        const [existing] = await db.execute('SELECT nisn FROM students WHERE id = ?', [req.params.id]);
+        const [existing] = await db.execute('SELECT * FROM students WHERE id = ?', [id]);
         if (existing.length > 0) {
-          whereValue = existing[0].nisn;
+          student = existing[0];
+          whereClause = 'id = ?';
+          whereValue = id;
         }
       } catch (err) {
-        whereClause = 'id = ?';
-        whereValue = req.params.id;
+        console.log('Error finding student by ID, trying NISN:', err.message);
       }
     }
     
-    await db.execute(`DELETE FROM students WHERE ${whereClause}`, [whereValue]);
-    res.json({ message: 'Siswa dihapus' });
+    // If not found by ID or ID is long (likely NISN), try by NISN
+    if (!student) {
+      try {
+        const [existing] = await db.execute('SELECT * FROM students WHERE nisn = ?', [id]);
+        if (existing.length > 0) {
+          student = existing[0];
+          whereClause = 'nisn = ?';
+          whereValue = id;
+        }
+      } catch (err) {
+        console.log('Error finding student by NISN:', err.message);
+      }
+    }
+    
+    // If student not found, return 404
+    if (!student) {
+      console.log('Student not found with ID/NISN:', id);
+      return res.status(404).json({ error: 'Siswa tidak ditemukan' });
+    }
+    
+    console.log('Found student to delete:', student.nama, 'NISN:', student.nisn);
+    
+    // Check if student has related payments (foreign key constraint)
+    try {
+      const [payments] = await db.execute('SELECT COUNT(*) as count FROM payments WHERE student_nisn = ?', [student.nisn]);
+      if (payments[0].count > 0) {
+        console.log('Student has payments, cannot delete');
+        return res.status(400).json({ 
+          error: 'Tidak dapat menghapus siswa', 
+          details: 'Siswa memiliki data pembayaran yang terkait. Hapus data pembayaran terlebih dahulu.' 
+        });
+      }
+    } catch (err) {
+      console.log('Error checking payments:', err.message);
+    }
+    
+    // Proceed with deletion
+    const [result] = await db.execute(`DELETE FROM students WHERE ${whereClause}`, [whereValue]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Siswa tidak ditemukan' });
+    }
+    
+    console.log('Student deleted successfully:', student.nama);
+    res.json({ message: 'Siswa dihapus', deletedStudent: { nama: student.nama, nisn: student.nisn } });
   } catch (err) {
     console.error('Delete student error:', err);
+    
+    // Handle specific database errors
+    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(400).json({ 
+        error: 'Tidak dapat menghapus siswa', 
+        details: 'Siswa memiliki data terkait yang mencegah penghapusan' 
+      });
+    }
+    
     res.status(500).json({ error: 'Database error', details: err.message });
   }
 });
