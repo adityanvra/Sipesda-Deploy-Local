@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const mysql = require('mysql2/promise');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 // Database connection
 const dbConfig = {
@@ -66,31 +67,7 @@ router.post('/test-register', (req, res) => {
   });
 });
 
-// Middleware untuk authentication
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
-    }
-    req.user = user;
-    next();
-  });
-};
-
-// Middleware untuk authorization (admin only)
-const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
 
 // POST /api/users/login - User login
 router.post('/login', async (req, res) => {
