@@ -39,7 +39,30 @@ router.get('/simple-test', (req, res) => {
   res.json({
     message: 'Simple test endpoint works!',
     timestamp: new Date().toISOString(),
-    hasBasicEnvVars: !!(process.env.DB_HOST && process.env.DB_PASSWORD)
+    hasBasicEnvVars: !!(process.env.DB_HOST && process.env.DB_PASSWORD),
+    envDebug: {
+      DB_HOST: process.env.DB_HOST || 'MISSING',
+      DB_PASSWORD: process.env.DB_PASSWORD ? 'SET' : 'MISSING',
+      DB_PORT: process.env.DB_PORT || 'MISSING'
+    }
+  });
+});
+
+// POST /api/users/test-register - Test registration without database
+router.post('/test-register', (req, res) => {
+  res.json({
+    message: 'Test register endpoint reached',
+    body: req.body,
+    envVarsPresent: {
+      DB_HOST: !!process.env.DB_HOST,
+      DB_PASSWORD: !!process.env.DB_PASSWORD,
+      JWT_SECRET: !!process.env.JWT_SECRET
+    },
+    dbConfig: {
+      host: process.env.DB_HOST || 'MISSING',
+      port: process.env.DB_PORT || 'MISSING',
+      hasPassword: !!process.env.DB_PASSWORD
+    }
   });
 });
 
