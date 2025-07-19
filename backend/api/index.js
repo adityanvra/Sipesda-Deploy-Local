@@ -89,6 +89,79 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Super simple login test without database
+app.post('/api/test-login', (req, res) => {
+  const { username, password } = req.body;
+  
+  if (username === 'admin' && password === 'admin123') {
+    res.json({
+      message: 'Test login successful',
+      token: 'test_token_' + Date.now(),
+      user: {
+        id: 1,
+        username: 'admin',
+        nama_lengkap: 'Administrator Test',
+        role: 'admin',
+        email: 'admin@test.com',
+        no_hp: '08123456789',
+        aktif: true
+      }
+    });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+// Test database connection
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const mysql = require('mysql2/promise');
+    
+    const dbConfig = {
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'sipesda_sekolah',
+      port: process.env.DB_PORT || 3306,
+    };
+    
+    console.log('Testing DB connection with config:', {
+      host: dbConfig.host,
+      user: dbConfig.user,
+      database: dbConfig.database,
+      port: dbConfig.port,
+      hasPassword: !!dbConfig.password
+    });
+    
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.end();
+    
+    res.json({
+      message: 'Database connection successful',
+      config: {
+        host: dbConfig.host,
+        user: dbConfig.user,
+        database: dbConfig.database,
+        port: dbConfig.port,
+        hasPassword: !!dbConfig.password
+      }
+    });
+  } catch (error) {
+    console.error('Database test error:', error);
+    res.status(500).json({
+      error: 'Database connection failed',
+      details: error.message,
+      config: {
+        host: process.env.DB_HOST || 'NOT_SET',
+        user: process.env.DB_USER || 'NOT_SET',
+        database: process.env.DB_NAME || 'NOT_SET',
+        port: process.env.DB_PORT || 'NOT_SET',
+        hasPassword: !!process.env.DB_PASSWORD
+      }
+    });
+  }
+});
+
 // Simple login test
 app.post('/api/test-login', async (req, res) => {
   try {
