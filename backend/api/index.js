@@ -38,7 +38,17 @@ app.get('/api', (req, res) => {
   res.json({ 
     message: '🚀 Sipesda Backend API berjalan di Vercel!',
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV
+    env: process.env.NODE_ENV,
+    status: 'OK'
+  });
+});
+
+// Simple test endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK',
+    message: 'Backend is working!',
+    timestamp: new Date().toISOString()
   });
 });
 
