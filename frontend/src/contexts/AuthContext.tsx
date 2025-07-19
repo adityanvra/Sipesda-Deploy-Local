@@ -111,25 +111,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       
-      const response = await axios.post(`${API_BASE_URL}/users/login`, {
-        username,
-        password
-      });
+      // Try hardcoded login first for testing
+      try {
+        const response = await axios.post(`${API_BASE_URL}/hardcoded-login`, {
+          username,
+          password
+        });
 
-      const { token: newToken, user: userData } = response.data;
+        const { token: newToken, user: userData } = response.data;
 
-      // Save to state
-      setToken(newToken);
-      setUser(userData);
+        // Save to state
+        setToken(newToken);
+        setUser(userData);
 
-      // Save to localStorage
-      localStorage.setItem('auth_token', newToken);
-      localStorage.setItem('auth_user', JSON.stringify(userData));
+        // Save to localStorage
+        localStorage.setItem('auth_token', newToken);
+        localStorage.setItem('auth_user', JSON.stringify(userData));
 
-      // Set default axios header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+        // Set default axios header
+        axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-      console.log('Login successful:', userData.username, 'Role:', userData.role);
+        console.log('Hardcoded login successful:', userData.username, 'Role:', userData.role);
+        return;
+        
+      } catch (hardcodedError: any) {
+        console.warn('Hardcoded login failed, trying regular login:', hardcodedError);
+        
+        // Fallback to regular login
+        const response = await axios.post(`${API_BASE_URL}/users/login`, {
+          username,
+          password
+        });
+
+        const { token: newToken, user: userData } = response.data;
+
+        // Save to state
+        setToken(newToken);
+        setUser(userData);
+
+        // Save to localStorage
+        localStorage.setItem('auth_token', newToken);
+        localStorage.setItem('auth_user', JSON.stringify(userData));
+
+        // Set default axios header
+        axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+
+        console.log('Regular login successful:', userData.username, 'Role:', userData.role);
+      }
       
     } catch (error: any) {
       console.error('Login error:', error);
