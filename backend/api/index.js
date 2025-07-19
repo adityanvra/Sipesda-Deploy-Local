@@ -60,6 +60,34 @@ app.get('/api', (req, res) => {
   });
 });
 
+// Simple environment debug
+app.get('/api/debug', (req, res) => {
+  res.json({
+    env: process.env.NODE_ENV,
+    hasDbHost: !!process.env.DB_HOST,
+    hasDbUser: !!process.env.DB_USER,
+    hasDbPassword: !!process.env.DB_PASSWORD,
+    hasDbName: !!process.env.DB_NAME,
+    hasDbPort: !!process.env.DB_PORT,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    dbHost: process.env.DB_HOST || 'not set',
+    dbPort: process.env.DB_PORT || 'not set'
+  });
+});
+
+// Simple login test
+app.post('/api/test-login', async (req, res) => {
+  try {
+    res.json({
+      message: 'Test login endpoint reached',
+      body: req.body,
+      hasRequiredEnvVars: !!(process.env.DB_HOST && process.env.DB_PASSWORD)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Environment check
 app.get('/api/env-check', (req, res) => {
   res.json({
