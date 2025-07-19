@@ -94,11 +94,11 @@ app.get('/api/test-db', async (req, res) => {
   try {
     const mysql = require('mysql2/promise');
     const dbConfig = {
-      host: process.env.DB_HOST || 'mysql.railway.internal',
+      host: process.env.DB_HOST || 'ballast.proxy.rlwy.net',
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'railway',
-      port: process.env.DB_PORT || 3306,
+      port: process.env.DB_PORT || 50251,
     };
     
     console.log('Testing DB connection with config:', {
