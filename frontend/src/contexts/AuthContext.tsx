@@ -15,7 +15,7 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
+  sessionId: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (profileData: { nama_lengkap: string; email?: string; no_hp?: string }) => Promise<void>;
@@ -50,25 +50,25 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Initialize auth state from localStorage
   useEffect(() => {
-    const savedToken = localStorage.getItem('auth_token');
+    const savedSessionId = localStorage.getItem('auth_session');
     const savedUser = localStorage.getItem('auth_user');
 
-    if (savedToken && savedUser) {
+    if (savedSessionId && savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
-        setToken(savedToken);
+        setSessionId(savedSessionId);
         setUser(parsedUser);
         
         // Set default axios header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+        axios.defaults.headers.common['X-Session-ID'] = savedSessionId;
         
-        // Validate token
-        validateToken(savedToken);
+        // Validate session
+        validateSession(savedSessionId);
       } catch (error) {
         console.error('Error parsing saved user data:', error);
         clearAuthData();
@@ -78,11 +78,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Validate token with backend
-  const validateToken = async (tokenToValidate: string) => {
+  // Validate session with backend
+  const validateSession = async (sessionIdToValidate: string) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/users/validate-token`, {}, {
-        headers: { Authorization: `Bearer ${tokenToValidate}` }
+      const response = await axios.post(`${API_BASE_URL}/users/validate-session`, {}, {
+        headers: { 'X-Session-ID': sessionIdToValidate }
       });
       
       if (response.data.valid) {
@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         clearAuthData();
       }
     } catch (error) {
-      console.error('Token validation failed:', error);
+      console.error('Session validation failed:', error);
       clearAuthData();
     }
   };
@@ -99,11 +99,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Clear authentication data
   const clearAuthData = () => {
     setUser(null);
-    setToken(null);
-    localStorage.removeItem('auth_token');
+    setSessionId(null);
+    localStorage.removeItem('auth_session');
     localStorage.removeItem('auth_user');
     localStorage.removeItem('demo_mode');
-    delete axios.defaults.headers.common['Authorization'];
+    delete axios.defaults.headers.common['X-Session-ID'];
   };
 
     // Login function
@@ -117,18 +117,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         password
       });
 
-      const { token: newToken, user: userData } = response.data;
+      const { sessionId: newSessionId, user: userData } = response.data;
 
       // Save to state
-      setToken(newToken);
+      setSessionId(newSessionId);
       setUser(userData);
 
       // Save to localStorage
-      localStorage.setItem('auth_token', newToken);
+      localStorage.setItem('auth_session', newSessionId);
       localStorage.setItem('auth_user', JSON.stringify(userData));
 
       // Set default axios header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      axios.defaults.headers.common['X-Session-ID'] = newSessionId;
 
       console.log('Login successful:', userData.username, 'Role:', userData.role);
       
@@ -157,7 +157,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateProfile = async (profileData: { nama_lengkap: string; email?: string; no_hp?: string }): Promise<void> => {
     try {
       const response = await axios.put(`${API_BASE_URL}/users/profile`, profileData, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 'X-Session-ID': sessionId }
       });
 
       // Update user state with new data
@@ -189,7 +189,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         oldPassword,
         newPassword
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 'X-Session-ID': sessionId }
       });
       
       console.log('Password changed successfully');
@@ -208,13 +208,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Computed values
-  const isAuthenticated = !!user && !!token;
+  const isAuthenticated = !!user && !!sessionId;
   const isAdmin = user?.role === 'admin';
   const isOperator = user?.role === 'operator';
 
   const value: AuthContextType = {
     user,
-    token,
+    sessionId,
     login,
     logout,
     updateProfile,

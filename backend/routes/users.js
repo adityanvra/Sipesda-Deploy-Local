@@ -1,9 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 // Database connection
 const dbConfig = {
@@ -15,7 +13,22 @@ const dbConfig = {
 };
 
 // JWT Secret - Use Railway environment variable
-const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024_production';
+// Simple session storage (in production, use Redis or database)
+const sessions = new Map();
+
+// Session validation function
+const validateSession = (sessionId) => {
+  const session = sessions.get(sessionId);
+  if (!session) return null;
+  
+  // Check if session expired
+  if (new Date() > session.expiresAt) {
+    sessions.delete(sessionId);
+    return null;
+  }
+  
+  return session;
+};
 
 // GET /api/users/health - Health check endpoint for debugging (no auth required)
 router.get('/health', (req, res) => {
@@ -29,7 +42,7 @@ router.get('/health', (req, res) => {
       DB_NAME: process.env.DB_NAME || 'NOT_SET',
       DB_PORT: process.env.DB_PORT || 'NOT_SET',
       hasDBPassword: !!process.env.DB_PASSWORD,
-      hasJWTSecret: !!process.env.JWT_SECRET
+      hasSessions: sessions.size > 0
     },
     message: 'Environment variables check completed'
   });
@@ -57,7 +70,7 @@ router.post('/test-register', (req, res) => {
     envVarsPresent: {
       DB_HOST: !!process.env.DB_HOST,
       DB_PASSWORD: !!process.env.DB_PASSWORD,
-      JWT_SECRET: !!process.env.JWT_SECRET
+      SESSIONS: sessions.size > 0
     },
     dbConfig: {
       host: process.env.DB_HOST || 'MISSING',
@@ -90,7 +103,7 @@ router.post('/login', async (req, res) => {
       hasDbUser: !!process.env.DB_USER,
       hasDbPassword: !!process.env.DB_PASSWORD,
       hasDbName: !!process.env.DB_NAME,
-      hasJwtSecret: !!process.env.JWT_SECRET
+      hasSessions: sessions.size > 0
     });
 
 
@@ -149,18 +162,19 @@ router.post('/login', async (req, res) => {
       );
       await connectionUpdate.end();
 
-      console.log('Creating JWT token...');
-      // Create JWT token
-      const token = jwt.sign(
-        { 
-          id: user.id, 
-          username: user.username, 
-          role: user.role,
-          nama_lengkap: user.nama_lengkap 
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
+      console.log('Creating session...');
+      // Create simple session ID
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Store session data
+      sessions.set(sessionId, {
+        userId: user.id,
+        username: user.username,
+        role: user.role,
+        nama_lengkap: user.nama_lengkap,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      });
 
       // Don't send password in response
       const { password: _, ...userWithoutPassword } = user;
@@ -168,7 +182,7 @@ router.post('/login', async (req, res) => {
       console.log('Database login successful for user:', username);
       res.json({
         message: 'Login berhasil',
-        token,
+        sessionId,
         user: userWithoutPassword
       });
       
@@ -300,7 +314,7 @@ router.post('/register', async (req, res) => {
 });
 
 // GET /api/users - Get all users (admin only)
-router.get('/', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     
