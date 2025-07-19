@@ -53,29 +53,25 @@ const AdminDashboard: React.FC = () => {
           monthlyRevenue
         });
       } catch (apiError) {
-        console.warn('API not available, using demo data:', apiError);
-        
-        // Use demo data when API is not available
+        console.error('API not available:', apiError);
         setStats({
-          totalStudents: 156,
-          totalPayments: 89,
-          totalAmount: 12750000,
-          totalUsers: 8,
-          activeUsers: 6,
-          monthlyRevenue: 4250000
+          totalStudents: 0,
+          totalPayments: 0,
+          totalAmount: 0,
+          totalUsers: 0,
+          activeUsers: 0,
+          monthlyRevenue: 0
         });
       }
     } catch (error) {
       console.error('Error loading admin stats:', error);
-      
-      // Fallback to demo data
       setStats({
-        totalStudents: 156,
-        totalPayments: 89,
-        totalAmount: 12750000,
-        totalUsers: 8,
-        activeUsers: 6,
-        monthlyRevenue: 4250000
+        totalStudents: 0,
+        totalPayments: 0,
+        totalAmount: 0,
+        totalUsers: 0,
+        activeUsers: 0,
+        monthlyRevenue: 0
       });
     } finally {
       setLoading(false);
@@ -219,7 +215,6 @@ const AdminDashboard: React.FC = () => {
                     timestamp: new Date().toISOString(),
                     system: {
                       version: 'SIPESDA v2.0',
-                      mode: 'demo',
                       build: new Date().toISOString().slice(0, 10)
                     },
                     stats: {
@@ -331,7 +326,7 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-white/80">Current Mode</span>
-                <span className="text-blue-400 font-semibold">🔧 Demo Data</span>
+                <span className="text-blue-400 font-semibold">📊 Live Data</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-white/80">Last Update</span>
