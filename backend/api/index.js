@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+require('dotenv').config();
 
 const users = require('../routes/users');
 const students = require('../routes/students');
@@ -25,6 +26,23 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
+
+// Add request logging for debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+  next();
+});
+
+// Add error handling middleware
+app.use((error, req, res, next) => {
+  console.error('Global error handler:', error);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+});
 
 // Routes
 app.use('/api/users', users);
