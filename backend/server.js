@@ -168,4 +168,8 @@ app.use((error, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server berjalan di port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server berjalan di port ${PORT}`);
+  console.log(`📅 Deployment timestamp: ${new Date().toISOString()}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
