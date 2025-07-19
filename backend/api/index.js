@@ -66,6 +66,17 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Test login endpoint
+app.post('/api/test-login', (req, res) => {
+  res.json({
+    message: 'Test login endpoint reached',
+    body: req.body,
+    env: process.env.NODE_ENV,
+    hasDbHost: !!process.env.DB_HOST,
+    hasDbPassword: !!process.env.DB_PASSWORD
+  });
+});
+
 
 
 // Routes
