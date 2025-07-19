@@ -112,8 +112,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       
-      // Use simple login endpoint only
-      const response = await axios.post(`${API_BASE_URL}/simple-login`, {
+      // Use root login endpoint
+      const response = await axios.post(`${API_BASE_URL}/login`, {
         username,
         password
       });
