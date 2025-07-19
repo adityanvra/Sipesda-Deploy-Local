@@ -79,6 +79,57 @@ app.post('/api/test-login', (req, res) => {
   });
 });
 
+// Test database connection endpoint
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const mysql = require('mysql2/promise');
+    const dbConfig = {
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'railway',
+      port: process.env.DB_PORT || 3306,
+    };
+    
+    console.log('Testing DB connection with config:', {
+      host: dbConfig.host,
+      user: dbConfig.user,
+      database: dbConfig.database,
+      port: dbConfig.port,
+      hasPassword: !!dbConfig.password
+    });
+    
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.execute('SELECT 1 as test');
+    await connection.end();
+    
+    res.json({ 
+      status: 'Database connection successful',
+      config: {
+        host: dbConfig.host,
+        user: dbConfig.user,
+        database: dbConfig.database,
+        port: dbConfig.port,
+        hasPassword: !!dbConfig.password
+      }
+    });
+  } catch (error) {
+    console.error('Database test error:', error);
+    res.status(500).json({ 
+      error: 'Database connection failed',
+      details: error.message,
+      code: error.code,
+      config: {
+        host: process.env.DB_HOST || 'NOT_SET',
+        user: process.env.DB_USER || 'NOT_SET',
+        database: process.env.DB_NAME || 'NOT_SET',
+        port: process.env.DB_PORT || 'NOT_SET',
+        hasPassword: !!process.env.DB_PASSWORD
+      }
+    });
+  }
+});
+
 
 
 
