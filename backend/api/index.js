@@ -55,7 +55,8 @@ app.get('/api', (req, res) => {
   res.json({ 
     message: '🚀 Sipesda Backend API berjalan di Vercel!',
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV 
+    env: process.env.NODE_ENV,
+    lastUpdate: '2025-07-19 - Fixed DB credentials' 
   });
 });
 
