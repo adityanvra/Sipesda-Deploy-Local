@@ -13,8 +13,8 @@ const dbConfig = {
   port: process.env.DB_PORT || 3306,
 };
 
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024';
+// JWT Secret - Disabled for testing
+const JWT_SECRET = process.env.JWT_SECRET || 'demo_secret_key_2024';
 
 // GET /api/users/health - Health check endpoint for debugging (no auth required)
 router.get('/health', (req, res) => {
@@ -66,22 +66,12 @@ router.post('/test-register', (req, res) => {
   });
 });
 
-// Middleware untuk authentication
+// Middleware untuk authentication - Disabled for testing
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
-    }
-    req.user = user;
-    next();
-  });
+  // Skip authentication for testing
+  console.log('Authentication skipped for testing');
+  req.user = { id: 1, username: 'demo', role: 'admin' };
+  next();
 };
 
 // Middleware untuk authorization (admin only)
@@ -148,18 +138,9 @@ router.post('/login', async (req, res) => {
     );
     await connectionUpdate.end();
 
-    console.log('Creating JWT token...');
-    // Create JWT token
-    const token = jwt.sign(
-      { 
-        id: user.id, 
-        username: user.username, 
-        role: user.role,
-        nama_lengkap: user.nama_lengkap 
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    console.log('Creating demo token...');
+    // Create demo token (no JWT for testing)
+    const token = 'demo_token_' + Date.now() + '_' + user.id;
 
     // Don't send password in response
     const { password: _, ...userWithoutPassword } = user;
