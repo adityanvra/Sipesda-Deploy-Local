@@ -113,7 +113,7 @@ router.post('/login', async (req, res) => {
       console.log('Database connection test successful');
       
       const [rows] = await connection.execute(
-        'SELECT * FROM users WHERE username = ? AND aktif = TRUE',
+        'SELECT * FROM users WHERE username = ?',
         [username]
       );
       console.log('Query executed, found users:', rows.length);
@@ -265,8 +265,8 @@ router.post('/register', async (req, res) => {
     console.log('Inserting new user...');
     // Insert new user
     const [result] = await connection.execute(
-      `INSERT INTO users (username, password, nama_lengkap, role, email, no_hp, aktif) 
-       VALUES (?, ?, ?, ?, ?, ?, TRUE)`,
+      `INSERT INTO users (username, password, nama_lengkap, role, email, no_hp) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [username, hashedPassword, nama_lengkap, role || 'operator', email || null, no_hp || null]
     );
 
@@ -301,7 +301,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
     
     const [rows] = await connection.execute(
-      `SELECT id, username, nama_lengkap, role, email, no_hp, aktif, last_login, created_at, updated_at 
+      `SELECT id, username, nama_lengkap, role, email, no_hp, last_login, created_at, updated_at 
        FROM users ORDER BY created_at DESC`
     );
 
@@ -320,7 +320,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
     
     const [rows] = await connection.execute(
-      `SELECT id, username, nama_lengkap, role, email, no_hp, aktif, last_login, created_at 
+      `SELECT id, username, nama_lengkap, role, email, no_hp, last_login, created_at 
        FROM users WHERE id = ?`,
       [req.user.id]
     );
@@ -343,7 +343,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, nama_lengkap, role, email, no_hp, aktif } = req.body;
+    const { username, nama_lengkap, role, email, no_hp } = req.body;
 
     if (!nama_lengkap) {
       return res.status(400).json({ error: 'Nama lengkap harus diisi' });
@@ -393,10 +393,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       updateFields.push('no_hp = ?');
       updateValues.push(no_hp);
     }
-    if (aktif !== undefined) {
-      updateFields.push('aktif = ?');
-      updateValues.push(aktif);
-    }
+
 
     updateFields.push('updated_at = CURRENT_TIMESTAMP');
     updateValues.push(id);
@@ -538,7 +535,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
     // Get updated user data
     const [updatedUser] = await connection.execute(
-      'SELECT id, username, nama_lengkap, role, email, no_hp, aktif, last_login, created_at FROM users WHERE id = ?',
+      'SELECT id, username, nama_lengkap, role, email, no_hp, last_login, created_at FROM users WHERE id = ?',
       [userId]
     );
 

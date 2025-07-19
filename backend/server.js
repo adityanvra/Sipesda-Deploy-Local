@@ -48,6 +48,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Users health check
+app.get('/api/users/health', (req, res) => {
+  res.json({ 
+    status: 'OK',
+    message: 'Users route berfungsi!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/', (req, res) => {
   res.json({ 
     message: '🚀 Sipesda Backend Berjalan dengan Baik!',
