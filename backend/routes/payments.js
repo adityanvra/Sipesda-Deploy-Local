@@ -36,6 +36,11 @@ router.get('/by-month', async (req, res) => {
     const { studentId, studentNisn, month, year } = req.query;
     let nisn = studentNisn;
 
+    // Validate required parameters
+    if (!month || !year) {
+      return res.status(400).json({ error: 'Month and year are required' });
+    }
+
     // If studentId is provided instead of NISN, convert it
     if (!nisn && studentId) {
       const [studentResult] = await db.execute('SELECT nisn FROM students WHERE id = ?', [studentId]);
@@ -44,6 +49,11 @@ router.get('/by-month', async (req, res) => {
       } else {
         return res.json([]); // No student found
       }
+    }
+
+    // If no NISN provided, return empty array
+    if (!nisn) {
+      return res.json([]);
     }
 
     const query = `
