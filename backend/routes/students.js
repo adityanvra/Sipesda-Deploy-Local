@@ -45,7 +45,7 @@ router.get('/:id', async (req, res) => {
       return res.status(400).json({ error: 'ID/NISN tidak valid' });
     }
     
-    // Support pencarian by NISN (primary key) atau ID lama
+    // Support pencarian by NISN atau ID
     let sql, param;
     if (id.length > 10) {
       // Jika lebih dari 10 karakter, kemungkinan NISN
@@ -53,7 +53,7 @@ router.get('/:id', async (req, res) => {
       param = id;
       console.log('🔍 Searching by NISN:', id);
     } else {
-      // Jika kurang, bisa ID lama atau NISN pendek
+      // Jika kurang, bisa ID atau NISN pendek
       sql = 'SELECT * FROM students WHERE nisn = ? OR id = ?';
       param = id;
       console.log('🔍 Searching by ID or NISN:', id);
@@ -94,12 +94,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'NISN sudah terdaftar', details: 'Student with this NISN already exists' });
     }
     
-    // Generate numeric ID from NISN (use last 9 digits to fit INT range)
-    const numericId = parseInt(data.nisn.toString().slice(-9)) || Date.now();
-    
-    const sql = `INSERT INTO students (id, nisn, nama, kelas, alamat, no_hp, nama_wali, jenis_kelamin, angkatan, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+    const sql = `INSERT INTO students (nisn, nama, kelas, alamat, no_hp, nama_wali, jenis_kelamin, angkatan, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
     const values = [
-      numericId, // Use shortened NISN as ID
       data.nisn,
       data.nama || data.nama_lengkap || data.name, 
       data.kelas || '1A', // Default kelas
