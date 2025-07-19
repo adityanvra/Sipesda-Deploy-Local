@@ -3,10 +3,40 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 
-const users = require('./routes/users');
-const students = require('./routes/students');
-const payments = require('./routes/payments');
-const paymentTypes = require('./routes/paymentTypes');
+// Load routes with error handling
+let users, students, payments, paymentTypes;
+
+try {
+  users = require('./routes/users');
+  console.log('✅ Users route loaded successfully');
+} catch (error) {
+  console.error('❌ Failed to load users route:', error);
+  users = null;
+}
+
+try {
+  students = require('./routes/students');
+  console.log('✅ Students route loaded successfully');
+} catch (error) {
+  console.error('❌ Failed to load students route:', error);
+  students = null;
+}
+
+try {
+  payments = require('./routes/payments');
+  console.log('✅ Payments route loaded successfully');
+} catch (error) {
+  console.error('❌ Failed to load payments route:', error);
+  payments = null;
+}
+
+try {
+  paymentTypes = require('./routes/paymentTypes');
+  console.log('✅ PaymentTypes route loaded successfully');
+} catch (error) {
+  console.error('❌ Failed to load paymentTypes route:', error);
+  paymentTypes = null;
+}
 
 const app = express();
 
@@ -36,7 +66,7 @@ app.use((req, res, next) => {
 // Debug endpoint
 app.get('/api/debug', (req, res) => {
   res.json({
-    message: 'Debug endpoint works!',
+    message: 'Debug endpoint works! - FORCE REDEPLOY',
     routes: {
       users: !!users,
       students: !!students,
@@ -48,7 +78,8 @@ app.get('/api/debug', (req, res) => {
       hasDbHost: !!process.env.DB_HOST,
       hasDbPassword: !!process.env.DB_PASSWORD
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    version: '1.0.1'
   });
 });
 
