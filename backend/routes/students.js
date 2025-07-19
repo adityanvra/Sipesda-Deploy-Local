@@ -27,7 +27,15 @@ router.get('/nisn/:nisn', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('Getting student by ID/NISN:', id);
+    console.log('🔍 Getting student by ID/NISN:', id);
+    console.log('📋 Request headers:', req.headers);
+    console.log('📋 Request method:', req.method);
+    
+    // Validate input
+    if (!id || id.trim() === '') {
+      console.log('❌ Invalid ID/NISN provided');
+      return res.status(400).json({ error: 'ID/NISN tidak valid' });
+    }
     
     // Support pencarian by NISN (primary key) atau ID lama
     let sql, param;
@@ -35,22 +43,34 @@ router.get('/:id', async (req, res) => {
       // Jika lebih dari 10 karakter, kemungkinan NISN
       sql = 'SELECT * FROM students WHERE nisn = ?';
       param = id;
+      console.log('🔍 Searching by NISN:', id);
     } else {
       // Jika kurang, bisa ID lama atau NISN pendek
       sql = 'SELECT * FROM students WHERE nisn = ? OR id = ?';
       param = id;
+      console.log('🔍 Searching by ID or NISN:', id);
     }
     
+    console.log('📋 Executing SQL:', sql, 'with params:', [param]);
     const [results] = await db.execute(sql, sql.includes('OR') ? [param, param] : [param]);
+    console.log('📋 Query results:', results.length, 'records found');
     
     if (results.length === 0) {
-      return res.status(404).json({ error: 'Siswa tidak ditemukan' });
+      console.log('❌ Student not found');
+      return res.status(404).json({ error: 'Siswa tidak ditemukan', searchedId: id });
     }
     
+    console.log('✅ Student found:', results[0].nama);
     res.json(results[0]);
   } catch (err) {
-    console.error('Get student by id error:', err);
-    res.status(500).json({ error: 'Database error', details: err.message });
+    console.error('❌ Get student by id error:', err);
+    console.error('❌ Error details:', err.code, err.errno, err.sqlMessage);
+    res.status(500).json({ 
+      error: 'Database error', 
+      details: err.message,
+      code: err.code,
+      sqlMessage: err.sqlMessage 
+    });
   }
 });
 
@@ -73,10 +93,10 @@ router.post('/', async (req, res) => {
       numericId, // Use shortened NISN as ID
       data.nisn,
       data.nama || data.nama_lengkap || data.name, 
-      data.kelas, 
-      data.alamat, 
-      data.no_hp || data.no_telepon, 
-      data.nama_wali || data.nama_orang_tua,
+      data.kelas || '1A', // Default kelas
+      data.alamat || '', 
+      data.no_hp || data.no_telepon || '', 
+      data.nama_wali || data.nama_orang_tua || '',
       data.jenis_kelamin || 'L',
       data.angkatan || new Date().getFullYear().toString()
     ];
