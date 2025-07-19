@@ -66,7 +66,7 @@ app.use((req, res, next) => {
 // Debug endpoint
 app.get('/api/debug', (req, res) => {
   res.json({
-    message: 'Debug endpoint works! - FORCE REDEPLOY',
+    message: 'Debug endpoint works! - FORCE REDEPLOY V2',
     routes: {
       users: !!users,
       students: !!students,
@@ -79,7 +79,8 @@ app.get('/api/debug', (req, res) => {
       hasDbPassword: !!process.env.DB_PASSWORD
     },
     timestamp: new Date().toISOString(),
-    version: '1.0.1'
+    version: '1.0.2',
+    deployment: 'FORCE REDEPLOY V2'
   });
 });
 
