@@ -14,7 +14,7 @@ const dbConfig = {
 };
 
 // JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024_production';
 
 // GET /api/users/health - Health check endpoint for debugging (no auth required)
 router.get('/health', (req, res) => {

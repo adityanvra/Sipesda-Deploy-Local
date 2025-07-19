@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 // JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024_production';
 
 // Middleware untuk authentication
 const authenticateToken = (req, res, next) => {
