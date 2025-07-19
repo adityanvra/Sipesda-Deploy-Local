@@ -111,33 +111,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       
-      // Try hardcoded login first for testing
-      try {
-        const response = await axios.post(`${API_BASE_URL}/hardcoded-login`, {
-          username,
-          password
-        });
-
-        const { token: newToken, user: userData } = response.data;
-
+      // Frontend-only demo mode for testing
+      if (username === 'admin' && password === 'admin123') {
+        const demoUser = {
+          id: 1,
+          username: 'admin',
+          nama_lengkap: 'Administrator Demo',
+          role: 'admin' as const,
+          email: 'admin@sipesda.demo',
+          no_hp: '08123456789',
+          aktif: true
+        };
+        
+        const demoToken = 'demo_token_' + Date.now();
+        
         // Save to state
-        setToken(newToken);
-        setUser(userData);
+        setToken(demoToken);
+        setUser(demoUser);
 
         // Save to localStorage
-        localStorage.setItem('auth_token', newToken);
-        localStorage.setItem('auth_user', JSON.stringify(userData));
+        localStorage.setItem('auth_token', demoToken);
+        localStorage.setItem('auth_user', JSON.stringify(demoUser));
+        localStorage.setItem('demo_mode', 'true');
 
         // Set default axios header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+        axios.defaults.headers.common['Authorization'] = `Bearer ${demoToken}`;
 
-        console.log('Hardcoded login successful:', userData.username, 'Role:', userData.role);
+        console.log('Frontend demo login successful:', demoUser.username, 'Role:', demoUser.role);
         return;
+      }
+      
+      if (username === 'operator' && password === 'operator123') {
+        const demoUser = {
+          id: 2,
+          username: 'operator',
+          nama_lengkap: 'Operator Demo',
+          role: 'operator' as const,
+          email: 'operator@sipesda.demo',
+          no_hp: '08123456788',
+          aktif: true
+        };
         
-      } catch (hardcodedError: any) {
-        console.warn('Hardcoded login failed, trying regular login:', hardcodedError);
+        const demoToken = 'demo_token_' + Date.now();
         
-        // Fallback to regular login
+        // Save to state
+        setToken(demoToken);
+        setUser(demoUser);
+
+        // Save to localStorage
+        localStorage.setItem('auth_token', demoToken);
+        localStorage.setItem('auth_user', JSON.stringify(demoUser));
+        localStorage.setItem('demo_mode', 'true');
+
+        // Set default axios header
+        axios.defaults.headers.common['Authorization'] = `Bearer ${demoToken}`;
+
+        console.log('Frontend demo login successful:', demoUser.username, 'Role:', demoUser.role);
+        return;
+      }
+      
+      // Try backend login if not demo credentials
+      try {
         const response = await axios.post(`${API_BASE_URL}/users/login`, {
           username,
           password
@@ -156,7 +190,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Set default axios header
         axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-        console.log('Regular login successful:', userData.username, 'Role:', userData.role);
+        console.log('Backend login successful:', userData.username, 'Role:', userData.role);
+        
+      } catch (backendError: any) {
+        console.error('Backend login failed:', backendError);
+        throw new Error('Username atau password salah');
       }
       
     } catch (error: any) {
@@ -167,7 +205,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else if (error.request) {
         throw new Error('Tidak dapat terhubung ke server');
       } else {
-        throw new Error('Terjadi kesalahan saat login');
+        throw new Error(error.message || 'Terjadi kesalahan saat login');
       }
     } finally {
       setLoading(false);
