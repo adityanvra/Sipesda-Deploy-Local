@@ -16,6 +16,23 @@ const dbConfig = {
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'sipesda_secret_key_2024';
 
+// GET /api/users/health - Health check endpoint for debugging (no auth required)
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      DB_HOST: process.env.DB_HOST,
+      DB_USER: process.env.DB_USER,
+      DB_NAME: process.env.DB_NAME,
+      DB_PORT: process.env.DB_PORT,
+      hasDBPassword: !!process.env.DB_PASSWORD,
+      hasJWTSecret: !!process.env.JWT_SECRET
+    }
+  });
+});
+
 // Middleware untuk authentication
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -538,23 +555,6 @@ router.post('/validate-token', authenticateToken, (req, res) => {
       username: req.user.username,
       role: req.user.role,
       nama_lengkap: req.user.nama_lengkap
-    }
-  });
-});
-
-// GET /api/users/health - Health check endpoint for debugging
-router.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    env: {
-      NODE_ENV: process.env.NODE_ENV,
-      DB_HOST: process.env.DB_HOST,
-      DB_USER: process.env.DB_USER,
-      DB_NAME: process.env.DB_NAME,
-      DB_PORT: process.env.DB_PORT,
-      hasDBPassword: !!process.env.DB_PASSWORD,
-      hasJWTSecret: !!process.env.JWT_SECRET
     }
   });
 });
