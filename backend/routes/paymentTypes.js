@@ -28,14 +28,14 @@ router.get('/', authenticateToken, requireAdminOrOperator, async (req, res) => {
 // POST - Create new payment type (admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { nama, nominal, periode, aktif = true } = req.body;
+  const { nama, nominal, periode, aktif = true } = req.body;
     
     if (!nama || !nominal || !periode) {
       return res.status(400).json({ error: 'Nama, nominal, dan periode harus diisi' });
     }
     
     const connection = await mysql.createConnection(dbConfig);
-    const sql = 'INSERT INTO payment_types (nama, nominal, periode, aktif) VALUES (?, ?, ?, ?)';
+  const sql = 'INSERT INTO payment_types (nama, nominal, periode, aktif) VALUES (?, ?, ?, ?)';
     const [result] = await connection.execute(sql, [nama, nominal, periode, aktif]);
     await connection.end();
     

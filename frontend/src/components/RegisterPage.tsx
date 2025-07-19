@@ -261,4 +261,4 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onBack, onSuccess }) => {
   );
 };
 
-export default RegisterPage; 
+export default RegisterPage;
