@@ -1,22 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql2/promise');
+const db = require('../db');
 
-// Database connection
-const dbConfig = {
-  host: process.env.MYSQLHOST || process.env.DB_HOST || 'ballast.proxy.rlwy.net',
-  user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
-  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || 'ZOXgksyyTFcwFYmXlJvcwTLpQtgNIBPn',
-  database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'railway',
-  port: process.env.MYSQLPORT || process.env.DB_PORT || 50251,
-};
+// Import permission middleware
+const usersRouter = require('./users');
+const requireAuth = usersRouter.requireAuth;
+const requirePermission = usersRouter.requirePermission;
 
 // GET - Read payment types (admin and operator can view)
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, requirePermission('payment_types', 'read'), async (req, res) => {
   try {
-    const connection = await mysql.createConnection(dbConfig);
-    const [results] = await connection.execute('SELECT * FROM payment_types WHERE aktif = 1');
-    await connection.end();
+    const [results] = await db.execute('SELECT * FROM payment_types WHERE aktif = 1');
     res.json(results);
   } catch (err) {
     console.error('Get payment types error:', err);
@@ -24,15 +18,38 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST - Create new payment type (admin only)
-router.post('/', async (req, res) => {
+// GET - Read payment type by ID (admin and operator can view)
+router.get('/:id', requireAuth, requirePermission('payment_types', 'read'), async (req, res) => {
   try {
-    const { nama, nominal, periode, aktif = true } = req.body;
-    const connection = await mysql.createConnection(dbConfig);
-    const sql = 'INSERT INTO payment_types (nama, nominal, periode, aktif) VALUES (?, ?, ?, ?)';
-    const [result] = await connection.execute(sql, [nama, nominal, periode, aktif]);
-    await connection.end();
-    res.json({ message: 'Jenis pembayaran ditambahkan', id: result.insertId });
+    const { id } = req.params;
+    const [results] = await db.execute('SELECT * FROM payment_types WHERE id = ?', [id]);
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Jenis pembayaran tidak ditemukan' });
+    }
+    
+    res.json(results[0]);
+  } catch (err) {
+    console.error('Get payment type error:', err);
+    res.status(500).json({ error: 'Database error', details: err.message });
+  }
+});
+
+// POST - Create payment type (admin only)
+router.post('/', requireAuth, requirePermission('payment_types', 'create'), async (req, res) => {
+  try {
+    const { nama, nominal, periode } = req.body;
+    
+    // Check if payment type already exists
+    const [existing] = await db.execute('SELECT id FROM payment_types WHERE nama = ?', [nama]);
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'Jenis pembayaran sudah ada' });
+    }
+    
+    const sql = 'INSERT INTO payment_types (nama, nominal, periode, aktif) VALUES (?, ?, ?, 1)';
+    const [result] = await db.execute(sql, [nama, nominal, periode]);
+    
+    res.json({ message: 'Jenis pembayaran berhasil ditambahkan', id: result.insertId });
   } catch (err) {
     console.error('Create payment type error:', err);
     res.status(500).json({ error: 'Database error', details: err.message });
@@ -40,49 +57,58 @@ router.post('/', async (req, res) => {
 });
 
 // PUT - Update payment type (admin only)
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, requirePermission('payment_types', 'update'), async (req, res) => {
   try {
-    const { nama, nominal, periode } = req.body;
     const { id } = req.params;
+    const { nama, nominal, periode, aktif } = req.body;
     
-    const connection = await mysql.createConnection(dbConfig);
+    // Check if payment type exists
+    const [existing] = await db.execute('SELECT id FROM payment_types WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Jenis pembayaran tidak ditemukan' });
+    }
     
-    // Build update fields dynamically
-    const validFields = [];
+    // Check if name already exists (if changing name)
+    if (nama) {
+      const [nameExists] = await db.execute('SELECT id FROM payment_types WHERE nama = ? AND id != ?', [nama, id]);
+      if (nameExists.length > 0) {
+        return res.status(400).json({ error: 'Nama jenis pembayaran sudah digunakan' });
+      }
+    }
+    
+    // Build update query
+    const updates = [];
     const values = [];
     
     if (nama) {
-      validFields.push('nama = ?');
+      updates.push('nama = ?');
       values.push(nama);
     }
+    
     if (nominal !== undefined) {
-      validFields.push('nominal = ?');
+      updates.push('nominal = ?');
       values.push(nominal);
     }
+    
     if (periode) {
-      validFields.push('periode = ?');
+      updates.push('periode = ?');
       values.push(periode);
     }
-
     
-    if (validFields.length === 0) {
-      await connection.end();
-      return res.status(400).json({ error: 'No valid fields to update' });
+    if (aktif !== undefined) {
+      updates.push('aktif = ?');
+      values.push(aktif ? 1 : 0);
     }
     
-    validFields.push('updated_at = CURRENT_TIMESTAMP');
-    const sql = `UPDATE payment_types SET ${validFields.join(', ')} WHERE id = ?`;
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Tidak ada data yang diupdate' });
+    }
+    
     values.push(id);
+    const sql = `UPDATE payment_types SET ${updates.join(', ')} WHERE id = ?`;
+    await db.execute(sql, values);
     
-    const [result] = await connection.execute(sql, values);
-    await connection.end();
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Payment type not found' });
-    }
-    
-    console.log('Payment type updated successfully');
-    res.json({ message: 'Jenis pembayaran diperbarui' });
+    res.json({ message: 'Jenis pembayaran berhasil diupdate' });
   } catch (err) {
     console.error('Update payment type error:', err);
     res.status(500).json({ error: 'Database error', details: err.message });
@@ -90,25 +116,24 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE - Delete payment type (admin only)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, requirePermission('payment_types', 'delete'), async (req, res) => {
   try {
     const { id } = req.params;
     
-    const connection = await mysql.createConnection(dbConfig);
-    
-    // Hard delete
-    const [result] = await connection.execute(
-      'DELETE FROM payment_types WHERE id = ?',
-      [id]
-    );
-    await connection.end();
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Payment type not found' });
+    // Check if payment type exists
+    const [existing] = await db.execute('SELECT id FROM payment_types WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Jenis pembayaran tidak ditemukan' });
     }
     
-    console.log('Payment type deleted successfully');
-    res.json({ message: 'Jenis pembayaran dihapus' });
+    // Check if payment type is used in payments
+    const [payments] = await db.execute('SELECT id FROM payments WHERE jenis_pembayaran = (SELECT nama FROM payment_types WHERE id = ?)', [id]);
+    if (payments.length > 0) {
+      return res.status(400).json({ error: 'Tidak dapat menghapus jenis pembayaran yang sedang digunakan' });
+    }
+    
+    await db.execute('DELETE FROM payment_types WHERE id = ?', [id]);
+    res.json({ message: 'Jenis pembayaran berhasil dihapus' });
   } catch (err) {
     console.error('Delete payment type error:', err);
     res.status(500).json({ error: 'Database error', details: err.message });

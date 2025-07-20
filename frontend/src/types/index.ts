@@ -3,6 +3,31 @@ export interface User {
   username: string;
   password: string;
   role: 'admin' | 'operator';
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserPermission {
+  id: number;
+  user_id: number;
+  permission: string;
+  can_read: boolean;
+  can_create: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserSession {
+  id: number;
+  user_id: number;
+  session_token: string;
+  remember_me: boolean;
+  expires_at: string;
+  created_at: string;
+  last_activity: string;
 }
 
 export interface Student {
@@ -39,4 +64,17 @@ export interface PaymentType {
   nominal: number;
   periode: string;
   aktif: boolean;
+}
+
+export interface LoginResponse {
+  user: User;
+  session_token: string;
+  expires_at: string;
+}
+
+export interface PermissionCheck {
+  can_read: boolean;
+  can_create: boolean;
+  can_update: boolean;
+  can_delete: boolean;
 }

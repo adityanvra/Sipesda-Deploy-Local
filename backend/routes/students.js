@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-router.get('/', async (req, res) => {
+// Import permission middleware
+const usersRouter = require('./users');
+const requireAuth = usersRouter.requireAuth;
+const requirePermission = usersRouter.requirePermission;
+
+// GET - Read students (admin and operator can view)
+router.get('/', requireAuth, requirePermission('students', 'read'), async (req, res) => {
   try {
     const [results] = await db.execute('SELECT * FROM students');
     res.json(results);
@@ -12,19 +18,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Route untuk mendapatkan siswa berdasarkan NISN (harus didefinisikan sebelum /:id)
-router.get('/nisn/:nisn', async (req, res) => {
-  try {
-    console.log('Getting student by NISN:', req.params.nisn);
-    const [results] = await db.execute('SELECT * FROM students WHERE nisn = ?', [req.params.nisn]);
-    res.json(results[0] || null);
-  } catch (err) {
-    console.error('Get student by nisn error:', err);
-    res.status(500).json({ error: 'Database error', details: err.message });
-  }
-});
-
-router.get('/:id', async (req, res) => {
+// GET - Read student by ID/NISN (admin and operator can view)
+router.get('/:id', requireAuth, requirePermission('students', 'read'), async (req, res) => {
   try {
     const { id } = req.params;
     console.log('🔍 Getting student by ID/NISN:', id);
@@ -71,19 +66,13 @@ router.get('/:id', async (req, res) => {
     console.log('✅ Student found:', results[0].nama);
     res.json(results[0]);
   } catch (err) {
-    console.error('❌ Get student by id error:', err);
-    console.error('❌ Error details:', err.code, err.errno, err.sqlMessage);
-    console.error('❌ Database connection error:', err.message);
-    res.status(500).json({ 
-      error: 'Database error', 
-      details: err.message,
-      code: err.code,
-      sqlMessage: err.sqlMessage 
-    });
+    console.error('Get student error:', err);
+    res.status(500).json({ error: 'Database error', details: err.message });
   }
 });
 
-router.post('/', async (req, res) => {
+// POST - Create student (admin only)
+router.post('/', requireAuth, requirePermission('students', 'create'), async (req, res) => {
   try {
     const data = req.body;
     console.log('Received data:', data);
@@ -120,7 +109,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+// PUT - Update student (admin only)
+router.put('/:id', requireAuth, requirePermission('students', 'update'), async (req, res) => {
   try {
     const data = req.body;
     // Updated field mapping untuk database yang sudah diubah
@@ -183,86 +173,27 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// DELETE - Delete student (admin only)
+router.delete('/:id', requireAuth, requirePermission('students', 'delete'), async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('Attempting to delete student with ID/NISN:', id);
     
-    // First, check if the student exists
-    let student = null;
-    let whereClause = 'nisn = ?';
-    let whereValue = id;
-    
-    // If ID is short (likely numeric ID), try to find by ID first
-    if (id.length <= 10 && /^\d+$/.test(id)) {
-      try {
-        const [existing] = await db.execute('SELECT * FROM students WHERE id = ?', [id]);
-        if (existing.length > 0) {
-          student = existing[0];
-          whereClause = 'id = ?';
-          whereValue = id;
-        }
-      } catch (err) {
-        console.log('Error finding student by ID, trying NISN:', err.message);
-      }
-    }
-    
-    // If not found by ID or ID is long (likely NISN), try by NISN
-    if (!student) {
-      try {
-        const [existing] = await db.execute('SELECT * FROM students WHERE nisn = ?', [id]);
-        if (existing.length > 0) {
-          student = existing[0];
-          whereClause = 'nisn = ?';
-          whereValue = id;
-        }
-      } catch (err) {
-        console.log('Error finding student by NISN:', err.message);
-      }
-    }
-    
-    // If student not found, return 404
-    if (!student) {
-      console.log('Student not found with ID/NISN:', id);
+    // Check if student exists
+    const [existing] = await db.execute('SELECT id FROM students WHERE id = ?', [id]);
+    if (existing.length === 0) {
       return res.status(404).json({ error: 'Siswa tidak ditemukan' });
     }
     
-    console.log('Found student to delete:', student.nama, 'NISN:', student.nisn);
-    
-    // Check if student has related payments (foreign key constraint)
-    try {
-      const [payments] = await db.execute('SELECT COUNT(*) as count FROM payments WHERE student_nisn = ?', [student.nisn]);
-      if (payments[0].count > 0) {
-        console.log('Student has payments, cannot delete');
-        return res.status(400).json({ 
-          error: 'Tidak dapat menghapus siswa', 
-          details: 'Siswa memiliki data pembayaran yang terkait. Hapus data pembayaran terlebih dahulu.' 
-        });
-      }
-    } catch (err) {
-      console.log('Error checking payments:', err.message);
+    // Check if student has payments
+    const [payments] = await db.execute('SELECT id FROM payments WHERE student_id = ?', [id]);
+    if (payments.length > 0) {
+      return res.status(400).json({ error: 'Tidak dapat menghapus siswa yang memiliki riwayat pembayaran' });
     }
     
-    // Proceed with deletion
-    const [result] = await db.execute(`DELETE FROM students WHERE ${whereClause}`, [whereValue]);
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Siswa tidak ditemukan' });
-    }
-    
-    console.log('Student deleted successfully:', student.nama);
-    res.json({ message: 'Siswa dihapus', deletedStudent: { nama: student.nama, nisn: student.nisn } });
+    await db.execute('DELETE FROM students WHERE id = ?', [id]);
+    res.json({ message: 'Siswa berhasil dihapus' });
   } catch (err) {
     console.error('Delete student error:', err);
-    
-    // Handle specific database errors
-    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-      return res.status(400).json({ 
-        error: 'Tidak dapat menghapus siswa', 
-        details: 'Siswa memiliki data terkait yang mencegah penghapusan' 
-      });
-    }
-    
     res.status(500).json({ error: 'Database error', details: err.message });
   }
 });

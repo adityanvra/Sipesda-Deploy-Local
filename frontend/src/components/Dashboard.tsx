@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useDatabaseContext } from '../contexts/DatabaseContext';
+import { User } from '../types';
 import RealTimeClock from './RealTimeClock';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  currentUser: User;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
   const { db, isLoading: isDbLoading } = useDatabaseContext();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalMaleStudents: 0,
     totalFemaleStudents: 0,
-    totalStudents: 0
+    totalStudents: 0,
+    totalUsers: 0,
+    totalPayments: 0
   });
+
+  const isAdmin = currentUser.role === 'admin';
 
   useEffect(() => {
     loadDashboardData();
@@ -23,10 +32,18 @@ const Dashboard: React.FC = () => {
       const maleStudents = students.filter(s => s.jenis_kelamin === 'L').length;
       const femaleStudents = students.filter(s => s.jenis_kelamin === 'P').length;
       
+      let totalUsers = 0;
+      if (isAdmin) {
+        const users = await db.getAllUsers();
+        totalUsers = users.length;
+      }
+      
       setStats({
         totalMaleStudents: maleStudents,
         totalFemaleStudents: femaleStudents,
-        totalStudents: students.length
+        totalStudents: students.length,
+        totalUsers,
+        totalPayments: 0 // TODO: Add payment count
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -51,7 +68,12 @@ const Dashboard: React.FC = () => {
           <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white text-xl">📊</span>
           </div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+            <p className="text-white/80 text-sm">
+              Selamat datang, {currentUser.username} ({currentUser.role})
+            </p>
+          </div>
         </div>
         <RealTimeClock />
       </div>
@@ -136,6 +158,50 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Admin-specific cards */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Total Users */}
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center">
+                <span className="text-2xl">👤</span>
+              </div>
+              <div>
+                <h3 className="text-sm opacity-80">Total User</h3>
+                <p className="text-3xl font-bold mt-1">{loading ? '...' : stats.totalUsers}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center">
+                <span className="text-2xl">✅</span>
+              </div>
+              <div>
+                <h3 className="text-sm opacity-80">Status Sistem</h3>
+                <p className="text-3xl font-bold mt-1">Online</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Database Status */}
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center">
+                <span className="text-2xl">🗄️</span>
+              </div>
+              <div>
+                <h3 className="text-sm opacity-80">Database</h3>
+                <p className="text-3xl font-bold mt-1">MySQL</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Payment Types */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -178,7 +244,6 @@ const Dashboard: React.FC = () => {
                 <p className="font-medium text-red-700">Pembayaran SPP</p>
                 <p className="text-sm text-red-600">1 Juni - 30 Juni</p>
               </div>
-             
             </div>
           </div>
 
@@ -193,6 +258,20 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Admin-specific announcement */}
+          {isAdmin && (
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-blue-800 text-white p-4">
+                <h3 className="font-bold">ADMIN PANEL</h3>
+              </div>
+              <div className="p-6">
+                <div className="text-blue-600 font-medium">
+                  Anda memiliki akses penuh untuk mengelola user, siswa, dan pembayaran. Gunakan menu di sidebar untuk navigasi.
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

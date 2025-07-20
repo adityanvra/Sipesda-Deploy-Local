@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-router.get('/', async (req, res) => {
+// Import permission middleware
+const usersRouter = require('./users');
+const requireAuth = usersRouter.requireAuth;
+const requirePermission = usersRouter.requirePermission;
+
+// GET - Read payments (admin and operator can view)
+router.get('/', requireAuth, requirePermission('payments', 'read'), async (req, res) => {
   try {
     const studentId = req.query.student_id;
     const studentNisn = req.query.student_nisn;
@@ -31,48 +37,25 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/by-month', async (req, res) => {
+// GET - Read payment by ID (admin and operator can view)
+router.get('/:id', requireAuth, requirePermission('payments', 'read'), async (req, res) => {
   try {
-    const { studentId, studentNisn, month, year } = req.query;
-    let nisn = studentNisn;
-
-    // Validate required parameters
-    if (!month || !year) {
-      return res.status(400).json({ error: 'Month and year are required' });
+    const { id } = req.params;
+    const [results] = await db.execute('SELECT * FROM payments WHERE id = ?', [id]);
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Pembayaran tidak ditemukan' });
     }
-
-    // If studentId is provided instead of NISN, convert it
-    if (!nisn && studentId) {
-      const [studentResult] = await db.execute('SELECT nisn FROM students WHERE id = ?', [studentId]);
-      if (studentResult.length > 0) {
-        nisn = studentResult[0].nisn;
-      } else {
-        return res.json([]); // No student found
-      }
-    }
-
-    // If no NISN provided, return empty array
-    if (!nisn) {
-      return res.json([]);
-    }
-
-    const query = `
-      SELECT * FROM payments 
-      WHERE student_nisn = ? 
-        AND MONTH(tanggal_pembayaran) = ? 
-        AND YEAR(tanggal_pembayaran) = ?
-        AND jenis_pembayaran LIKE '%SPP%'
-    `;
-
-    const [results] = await db.execute(query, [nisn, month, year]);
-    res.json(results);
+    
+    res.json(results[0]);
   } catch (err) {
-    console.error('Get payments by month error:', err);
+    console.error('Get payment error:', err);
     res.status(500).json({ error: 'Database error', details: err.message });
   }
 });
 
-router.post('/', async (req, res) => {
+// POST - Create payment (admin and operator can create)
+router.post('/', requireAuth, requirePermission('payments', 'create'), async (req, res) => {
   try {
     const data = req.body;
     let studentNisn = data.student_nisn;
@@ -122,48 +105,59 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+// PUT - Update payment (admin and operator can update)
+router.put('/:id', requireAuth, requirePermission('payments', 'update'), async (req, res) => {
   try {
+    const { id } = req.params;
     const data = req.body;
     
-    // Build update fields dynamically
-    const validFields = [];
-    const values = [];
-    
-    // Handle student_nisn conversion if student_id is provided
-    if (data.student_id && !data.student_nisn) {
-      const [studentResult] = await db.execute('SELECT nisn FROM students WHERE id = ?', [data.student_id]);
-      if (studentResult.length > 0) {
-        data.student_nisn = studentResult[0].nisn;
-      }
+    // Check if payment exists
+    const [existing] = await db.execute('SELECT id FROM payments WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Pembayaran tidak ditemukan' });
     }
     
-    const allowedFields = ['student_id', 'student_nisn', 'jenis_pembayaran', 'nominal', 'tanggal_pembayaran', 'status', 'keterangan', 'catatan', 'petugas'];
+    // Build update query
+    const updates = [];
+    const values = [];
+    
+    const allowedFields = ['jenis_pembayaran', 'nominal', 'tanggal_pembayaran', 'status', 'keterangan', 'catatan', 'petugas'];
     
     allowedFields.forEach(field => {
       if (data.hasOwnProperty(field) && data[field] !== undefined) {
-        validFields.push(`${field} = ?`);
+        updates.push(`${field} = ?`);
         values.push(data[field]);
       }
     });
     
-    if (validFields.length === 0) {
-      return res.status(400).json({ error: 'No valid fields to update' });
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Tidak ada data yang diupdate' });
     }
     
-    const sql = `UPDATE payments SET ${validFields.join(', ')}, updated_at = NOW() WHERE id = ?`;
-    await db.execute(sql, [...values, req.params.id]);
-    res.json({ message: 'Pembayaran diperbarui' });
+    values.push(id);
+    const sql = `UPDATE payments SET ${updates.join(', ')}, updated_at = NOW() WHERE id = ?`;
+    await db.execute(sql, values);
+    
+    res.json({ message: 'Pembayaran berhasil diupdate' });
   } catch (err) {
     console.error('Update payment error:', err);
     res.status(500).json({ error: 'Database error', details: err.message });
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// DELETE - Delete payment (admin only)
+router.delete('/:id', requireAuth, requirePermission('payments', 'delete'), async (req, res) => {
   try {
-    await db.execute('DELETE FROM payments WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Pembayaran dihapus' });
+    const { id } = req.params;
+    
+    // Check if payment exists
+    const [existing] = await db.execute('SELECT id FROM payments WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Pembayaran tidak ditemukan' });
+    }
+    
+    await db.execute('DELETE FROM payments WHERE id = ?', [id]);
+    res.json({ message: 'Pembayaran berhasil dihapus' });
   } catch (err) {
     console.error('Delete payment error:', err);
     res.status(500).json({ error: 'Database error', details: err.message });

@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LoginPage from "./components/LoginPage";
+import RegisterPage from "./components/RegisterPage";
 import Dashboard from "./components/Dashboard";
 import Keuangan from "./components/Keuangan";
 import RiwayatPembayaran from "./components/RiwayatPembayaran";
 import ManajemenSiswa from "./components/ManajemenSiswa";
+import ManajemenUser from "./components/ManajemenUser";
+import EditProfile from "./components/EditProfile";
 import TambahSiswa from "./components/TambahSiswa";
 import EditSiswa from "./components/EditSiswa";
 import { User } from "./types";
@@ -19,16 +22,157 @@ function App() {
   const [currentPage, setCurrentPage] = useState("login");
   const [user, setUser] = useState<User | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [sessionCheckInterval, setSessionCheckInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Check session on app start
+  useEffect(() => {
+    checkExistingSession();
+  }, []);
+
+  // Set up session monitoring
+  useEffect(() => {
+    if (user) {
+      // Check session every 30 seconds
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch('http://localhost:5000/api/users/session', {
+            headers: {
+              'x-session-token': localStorage.getItem('sessionToken') || ''
+            }
+          });
+          
+          if (!response.ok) {
+            // Session expired or invalid
+            handleLogout();
+          }
+        } catch (error) {
+          console.log('Session check failed, logging out...');
+          handleLogout();
+        }
+      }, 30000); // 30 seconds
+
+      setSessionCheckInterval(interval);
+
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }
+  }, [user]);
+
+  const checkExistingSession = async () => {
+    try {
+      const sessionToken = localStorage.getItem('sessionToken');
+      if (sessionToken) {
+        const response = await fetch('http://localhost:5000/api/users/session', {
+          headers: {
+            'x-session-token': sessionToken
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+          setCurrentPage("dashboard");
+        } else {
+          // Session expired, but keep credentials if Remember Me is checked
+          localStorage.removeItem('sessionToken');
+          
+          // Check if we should keep credentials
+          const savedCredentials = localStorage.getItem('sipesda_credentials');
+          if (savedCredentials) {
+            try {
+              const credentials = JSON.parse(savedCredentials);
+              if (credentials.rememberMe !== true) {
+                localStorage.removeItem('sipesda_credentials');
+              }
+            } catch (error) {
+              console.log('Error parsing saved credentials:', error);
+              localStorage.removeItem('sipesda_credentials');
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Session check failed');
+      localStorage.removeItem('sessionToken');
+      
+      // Check if we should keep credentials
+      const savedCredentials = localStorage.getItem('sipesda_credentials');
+      if (savedCredentials) {
+        try {
+          const credentials = JSON.parse(savedCredentials);
+          if (credentials.rememberMe !== true) {
+            localStorage.removeItem('sipesda_credentials');
+          }
+        } catch (error) {
+          console.log('Error parsing saved credentials:', error);
+          localStorage.removeItem('sipesda_credentials');
+        }
+      }
+    }
+  };
 
   const handleLogin = (userData: User) => {
     setUser(userData);
     setCurrentPage("dashboard");
   };
 
-  const handleLogout = () => {
-    setUser(null);
+  const handleShowRegister = () => {
+    setCurrentPage("register");
+  };
+
+  const handleBackToLogin = () => {
     setCurrentPage("login");
-    setSelectedStudentId(null);
+  };
+
+  const handleRegisterSuccess = () => {
+    setCurrentPage("login");
+  };
+
+  const handleLogout = async () => {
+    try {
+      const sessionToken = localStorage.getItem('sessionToken');
+      if (sessionToken) {
+        await fetch('http://localhost:5000/api/users/logout', {
+          method: 'POST',
+          headers: {
+            'x-session-token': sessionToken
+          }
+        });
+      }
+    } catch (error) {
+      console.log('Logout request failed');
+    } finally {
+      // Check if Remember Me is enabled before clearing credentials
+      const savedCredentials = localStorage.getItem('sipesda_credentials');
+      let shouldKeepCredentials = false;
+      
+      if (savedCredentials) {
+        try {
+          const credentials = JSON.parse(savedCredentials);
+          shouldKeepCredentials = credentials.rememberMe === true;
+        } catch (error) {
+          console.log('Error parsing saved credentials:', error);
+        }
+      }
+      
+      // Clear session token but keep credentials if Remember Me is checked
+      localStorage.removeItem('sessionToken');
+      
+      // Only clear credentials if Remember Me is not checked
+      if (!shouldKeepCredentials) {
+        localStorage.removeItem('sipesda_credentials');
+      }
+      
+      setUser(null);
+      setCurrentPage("login");
+      setSelectedStudentId(null);
+      
+      if (sessionCheckInterval) {
+        clearInterval(sessionCheckInterval);
+        setSessionCheckInterval(null);
+      }
+    }
   };
 
   const handleEditStudent = (studentId: number) => {
@@ -36,14 +180,20 @@ function App() {
     setCurrentPage("edit-siswa");
   };
 
+  // Show login or register page
   if (!user) {
-    return <LoginPage onLogin={handleLogin} />;
+    if (currentPage === "register") {
+      return <RegisterPage onBackToLogin={handleBackToLogin} onRegisterSuccess={handleRegisterSuccess} />;
+    }
+    return <LoginPage onLogin={handleLogin} onShowRegister={handleShowRegister} />;
   }
+
+  const isAdmin = user.role === 'admin';
 
   const renderCurrentPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <Dashboard />;
+        return <Dashboard currentUser={user} />;
       case "keuangan":
         return <Keuangan />;
       case "riwayat":
@@ -55,12 +205,16 @@ function App() {
             onAddStudent={() => setCurrentPage("tambah-siswa")}
           />
         );
+      case "manajemen-user":
+        return <ManajemenUser />;
+      case "edit-profile":
+        return <EditProfile currentUser={user} onBack={() => setCurrentPage("dashboard")} />;
       case "tambah-siswa":
         return <TambahSiswa onBack={() => setCurrentPage("manajemen")} />;
       case "edit-siswa":
         return <EditSiswa studentId={selectedStudentId!} onBack={() => setCurrentPage("manajemen")} />;
       default:
-        return <Dashboard />;
+        return <Dashboard currentUser={user} />;
     }
   };
 
@@ -85,6 +239,13 @@ function App() {
                     {user.role === "admin" ? "Administrator" : "Operator"}
                   </p>
                   <p className="text-slate-300 text-sm">{user.username}</p>
+                  <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                    user.role === 'admin' 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {user.role}
+                  </span>
                 </div>
               </div>
             </div>
@@ -157,6 +318,38 @@ function App() {
                     <span className="font-bold">Manajemen Siswa</span>
                   </button>
                 </li>
+                
+                {/* Admin-only menu */}
+                {isAdmin && (
+                  <li>
+                    <button
+                      onClick={() => setCurrentPage("manajemen-user")}
+                      className={`w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors ${
+                        currentPage === "manajemen-user"
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-800 hover:bg-blue-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <img src={iconUser} alt="User" className="w-5 h-5" />
+                      <span className="font-bold">Manajemen User</span>
+                    </button>
+                  </li>
+                )}
+
+                {/* Edit Profile - Available for all users */}
+                <li>
+                  <button
+                    onClick={() => setCurrentPage("edit-profile")}
+                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors ${
+                      currentPage === "edit-profile"
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-800 hover:bg-blue-100 hover:text-slate-900"
+                    }`}
+                  >
+                    <img src={iconUser} alt="Profile" className="w-5 h-5" />
+                    <span className="font-bold">Edit Profile</span>
+                  </button>
+                </li>
               </ul>
             </nav>
 
@@ -167,7 +360,6 @@ function App() {
                 className="w-full flex items-center space-x-2 px-4 py-3 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
               >
                 <img src={iconLogout} alt="Logout" className="w-5 h-5" />
-
                 <span className="font-bold">Keluar</span>
               </button>
             </div>
