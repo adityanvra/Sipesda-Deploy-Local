@@ -98,7 +98,7 @@ router.post('/login', async (req, res) => {
     const sessionToken = generateSessionToken();
     const expiresAt = rememberMe 
       ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-      : new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      : new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     
     // Create session
     await db.execute(
@@ -110,7 +110,7 @@ router.post('/login', async (req, res) => {
     res.cookie('sessionToken', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 60 * 60 * 1000
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 10 * 60 * 1000
     });
     
     res.json({
