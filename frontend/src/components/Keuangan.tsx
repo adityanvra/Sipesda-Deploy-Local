@@ -642,12 +642,18 @@ const Keuangan: React.FC = () => {
                         />
                       </div>
                       <div className="flex justify-end mt-4">
-                        <button
-                          onClick={handlePaymentAndPrint}
-                          className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                          Proses Pembayaran
-                        </button>
+                        {canCreatePayments ? (
+                          <button
+                            onClick={handlePaymentAndPrint}
+                            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                          >
+                            Proses Pembayaran
+                          </button>
+                        ) : (
+                          <div className="text-red-500 text-sm">
+                            Tidak ada izin untuk membuat pembayaran
+                          </div>
+                        )}
                       </div>
                     </div>
                 </div>
