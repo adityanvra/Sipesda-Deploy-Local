@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { User, Student, Payment, PaymentType, UserPermission, LoginResponse, PermissionCheck } from '../types';
+import { User, Student, Payment, PaymentType, UserPermission, LoginResponse } from '../types';
 
 // Konfigurasi untuk Laragon localhost
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
@@ -9,6 +9,9 @@ class SessionManager {
   private static instance: SessionManager;
   private sessionToken: string | null = null;
   private sessionCheckInterval: NodeJS.Timeout | null = null;
+  private keepAliveInterval: NodeJS.Timeout | null = null;
+  private lastActivity: number = Date.now();
+  private activityListeners: Array<{ event: string; handler: EventListener }> | null = null;
 
   static getInstance(): SessionManager {
     if (!SessionManager.instance) {
@@ -37,6 +40,11 @@ class SessionManager {
       clearInterval(this.sessionCheckInterval);
       this.sessionCheckInterval = null;
     }
+    if (this.keepAliveInterval) {
+      clearInterval(this.keepAliveInterval);
+      this.keepAliveInterval = null;
+    }
+    this.removeActivityListeners();
   }
 
   private startSessionCheck() {
@@ -50,6 +58,50 @@ class SessionManager {
         window.location.href = '/';
       }
     }, 30000); // 30 seconds
+
+    // Keep session alive by sending activity every 25 seconds
+    this.keepAliveInterval = setInterval(async () => {
+      try {
+        const token = this.getSessionToken();
+        if (token) {
+          await axios.post(`${API_BASE_URL}/users/keep-alive`, {}, {
+            headers: { 'x-session-token': token }
+          });
+        }
+      } catch (error) {
+        // Silent fail for keep-alive
+      }
+    }, 25000); // 25 seconds
+
+    // Add activity listeners to detect user activity
+    this.addActivityListeners();
+  }
+
+  private addActivityListeners() {
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    const activityHandler = () => {
+      this.lastActivity = Date.now();
+    };
+
+    events.forEach(event => {
+      document.addEventListener(event, activityHandler, true);
+    });
+
+    // Store listeners for cleanup
+    this.activityListeners = events.map(event => ({
+      event,
+      handler: activityHandler
+    }));
+  }
+
+  private removeActivityListeners() {
+    if (this.activityListeners) {
+      this.activityListeners.forEach(({ event, handler }) => {
+        document.removeEventListener(event, handler, true);
+      });
+      this.activityListeners = null;
+    }
   }
 
   private async validateSession() {

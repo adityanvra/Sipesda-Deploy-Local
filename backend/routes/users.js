@@ -402,6 +402,27 @@ router.delete('/:id', requireAuth, requirePermission('users', 'delete'), async (
   }
 });
 
+// Keep session alive
+router.post('/keep-alive', requireAuth, async (req, res) => {
+  try {
+    // Update last activity and extend session if needed
+    const newExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // Extend by 1 hour
+    
+    await db.execute(
+      'UPDATE user_sessions SET last_activity = NOW(), expires_at = ? WHERE session_token = ?',
+      [newExpiresAt, req.session.session_token]
+    );
+    
+    res.json({ 
+      message: 'Session kept alive',
+      expires_at: newExpiresAt
+    });
+  } catch (err) {
+    console.error('Keep alive error:', err);
+    res.status(500).json({ error: 'Database error', details: err.message });
+  }
+});
+
 // Clean up expired sessions (cron job)
 router.post('/cleanup-sessions', async (req, res) => {
   try {
