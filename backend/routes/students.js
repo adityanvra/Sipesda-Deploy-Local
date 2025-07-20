@@ -188,7 +188,7 @@ router.delete('/:id', requireAuth, requirePermission('students', 'delete'), asyn
     const [payments] = await db.execute('SELECT id FROM payments WHERE student_id = ?', [id]);
     if (payments.length > 0) {
       return res.status(400).json({ error: 'Tidak dapat menghapus siswa yang memiliki riwayat pembayaran' });
-    }
+      }
     
     await db.execute('DELETE FROM students WHERE id = ?', [id]);
     res.json({ message: 'Siswa berhasil dihapus' });

@@ -311,13 +311,13 @@ const EditSiswa: React.FC<EditSiswaProps> = ({ studentId, onBack }) => {
                 Batal
               </button>
               {canUpdateStudents ? (
-                <button
-                  type="submit"
-                  disabled={loading || !db}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
-                </button>
+              <button
+                type="submit"
+                disabled={loading || !db}
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+              </button>
               ) : (
                 <div className="px-6 py-2 bg-gray-300 text-gray-600 rounded-lg">
                   Tidak ada izin untuk mengedit

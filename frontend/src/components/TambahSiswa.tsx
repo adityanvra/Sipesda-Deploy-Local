@@ -281,13 +281,13 @@ const TambahSiswa: React.FC<TambahSiswaProps> = ({ onBack }) => {
                 Batal
               </button>
               {canCreateStudents ? (
-                <button
-                  type="submit"
-                  disabled={loading || !db}
-                  className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Menyimpan...' : 'Simpan Siswa'}
-                </button>
+              <button
+                type="submit"
+                disabled={loading || !db}
+                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Menyimpan...' : 'Simpan Siswa'}
+              </button>
               ) : (
                 <div className="px-6 py-2 bg-gray-300 text-gray-600 rounded-lg">
                   Tidak ada izin untuk menambah siswa

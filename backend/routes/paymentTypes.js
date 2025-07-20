@@ -94,7 +94,7 @@ router.put('/:id', requireAuth, requirePermission('payment_types', 'update'), as
       updates.push('periode = ?');
       values.push(periode);
     }
-    
+
     if (aktif !== undefined) {
       updates.push('aktif = ?');
       values.push(aktif ? 1 : 0);

@@ -289,36 +289,36 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
             <div className="flex items-center space-x-2 ml-auto">
               {/* Tombol Tambah */}
               {canCreateStudents && (
-                <button
-                  onClick={onAddStudent}
-                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
-                >
-                  <span>➕</span>
-                  <span>Tambah Siswa</span>
-                </button>
+              <button
+                onClick={onAddStudent}
+                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
+              >
+                <span>➕</span>
+                <span>Tambah Siswa</span>
+              </button>
               )}
 
               {/* Tombol Import - Hanya untuk Admin */}
               {canCreateStudents && (
-                <label className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 cursor-pointer">
-                  📥 Import Excel
-                  <input
-                    type="file"
-                    accept=".xlsx, .xls"
-                    onChange={handleExcelUpload}
-                    className="hidden"
-                  />
-                </label>
+              <label className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 cursor-pointer">
+                📥 Import Excel
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={handleExcelUpload}
+                  className="hidden"
+                />
+              </label>
               )}
 
               {/* Tombol Download Template - Hanya untuk Admin */}
               {canCreateStudents && (
-                <button
-                  onClick={handleDownloadTemplate}
-                  className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600"
-                >
-                  📄 Unduh Template
-                </button>
+              <button
+                onClick={handleDownloadTemplate}
+                className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600"
+              >
+                📄 Unduh Template
+              </button>
               )}
             </div>
           </div>
@@ -424,22 +424,22 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
                       <td className="px-4 py-3 text-sm">
                         <div className="inline-flex justify-center items-center space-x-2">
                           {canUpdateStudents && (
-                            <button
-                              onClick={() => onEditStudent(student.id)}
-                              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
-                            >
-                              Edit
-                            </button>
+                          <button
+                            onClick={() => onEditStudent(student.id)}
+                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
+                          >
+                            Edit
+                          </button>
                           )}
                           {canDeleteStudents && (
-                            <button
-                              onClick={() =>
-                                handleDeleteStudent(student.id, student.nama)
-                              }
-                              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
-                            >
-                              Hapus
-                            </button>
+                          <button
+                            onClick={() =>
+                              handleDeleteStudent(student.id, student.nama)
+                            }
+                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
+                          >
+                            Hapus
+                          </button>
                           )}
                         </div>
                       </td>
