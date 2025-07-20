@@ -17,6 +17,9 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [canDeleteStudents, setCanDeleteStudents] = useState(false);
+  const [canCreateStudents, setCanCreateStudents] = useState(false);
+  const [canUpdateStudents, setCanUpdateStudents] = useState(false);
   const [stats, setStats] = useState({
     totalStudents: 0,
     maleStudents: 0,
@@ -26,6 +29,7 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
 
   useEffect(() => {
     loadStudents();
+    checkPermissions();
   }, [db]);
 
   useEffect(() => {
@@ -50,6 +54,22 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
 
     calculateStats();
   }, [students]);
+
+  const checkPermissions = async () => {
+    if (!db) return;
+    
+    try {
+      const canDelete = await db.checkPermission('students', 'delete');
+      const canCreate = await db.checkPermission('students', 'create');
+      const canUpdate = await db.checkPermission('students', 'update');
+      
+      setCanDeleteStudents(canDelete);
+      setCanCreateStudents(canCreate);
+      setCanUpdateStudents(canUpdate);
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+    }
+  };
 
   const loadStudents = async () => {
     if (!db) return;
@@ -268,13 +288,15 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
             {/* Upload & Download Excel */}
             <div className="flex items-center space-x-2 ml-auto">
               {/* Tombol Tambah */}
-              <button
-                onClick={onAddStudent}
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
-              >
-                <span>➕</span>
-                <span>Tambah Siswa</span>
-              </button>
+              {canCreateStudents && (
+                <button
+                  onClick={onAddStudent}
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
+                >
+                  <span>➕</span>
+                  <span>Tambah Siswa</span>
+                </button>
+              )}
 
               {/* Tombol Import */}
               <label className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 cursor-pointer">
@@ -336,7 +358,7 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
                   ? "Coba ubah kata kunci pencarian"
                   : "Mulai dengan menambahkan siswa baru"}
               </p>
-              {!searchTerm && (
+              {!searchTerm && canCreateStudents && (
                 <button
                   onClick={onAddStudent}
                   className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors"
@@ -397,20 +419,24 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
                       <td className="px-4 py-3 text-sm">{student.no_hp}</td>
                       <td className="px-4 py-3 text-sm">
                         <div className="inline-flex justify-center items-center space-x-2">
-                          <button
-                            onClick={() => onEditStudent(student.id)}
-                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleDeleteStudent(student.id, student.nama)
-                            }
-                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
-                          >
-                            Hapus
-                          </button>
+                          {canUpdateStudents && (
+                            <button
+                              onClick={() => onEditStudent(student.id)}
+                              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {canDeleteStudents && (
+                            <button
+                              onClick={() =>
+                                handleDeleteStudent(student.id, student.nama)
+                              }
+                              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
+                            >
+                              Hapus
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

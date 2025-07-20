@@ -37,6 +37,27 @@ const Keuangan: React.FC = () => {
     total: number;
     petugas: string;
   } | null>(null);
+  const [canCreatePayments, setCanCreatePayments] = useState(false);
+  const [canUpdatePayments, setCanUpdatePayments] = useState(false);
+
+  // Check permissions on component mount
+  useEffect(() => {
+    checkPermissions();
+  }, [db]);
+
+  const checkPermissions = async () => {
+    if (!db) return;
+    
+    try {
+      const canCreate = await db.checkPermission('payments', 'create');
+      const canUpdate = await db.checkPermission('payments', 'update');
+      
+      setCanCreatePayments(canCreate);
+      setCanUpdatePayments(canUpdate);
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+    }
+  };
 
   const paymentTypes = [
     { id: 'SPP', name: 'Pembayaran SPP', nominal: 100000, periode: 'Bulanan' },

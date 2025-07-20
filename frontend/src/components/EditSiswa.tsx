@@ -31,10 +31,23 @@ const EditSiswa: React.FC<EditSiswaProps> = ({ studentId, onBack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [student, setStudent] = useState<Student | null>(null);
+  const [canUpdateStudents, setCanUpdateStudents] = useState(false);
 
   useEffect(() => {
     loadStudent();
+    checkPermissions();
   }, [studentId, db]);
+
+  const checkPermissions = async () => {
+    if (!db) return;
+    
+    try {
+      const canUpdate = await db.checkPermission('students', 'update');
+      setCanUpdateStudents(canUpdate);
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+    }
+  };
 
   const loadStudent = async () => {
     if (!db) return;
@@ -297,13 +310,19 @@ const EditSiswa: React.FC<EditSiswaProps> = ({ studentId, onBack }) => {
               >
                 Batal
               </button>
-              <button
-                type="submit"
-                disabled={loading || !db}
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
-              </button>
+              {canUpdateStudents ? (
+                <button
+                  type="submit"
+                  disabled={loading || !db}
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
+              ) : (
+                <div className="px-6 py-2 bg-gray-300 text-gray-600 rounded-lg">
+                  Tidak ada izin untuk mengedit
+                </div>
+              )}
             </div>
           </form>
         </div>

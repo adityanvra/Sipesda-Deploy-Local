@@ -19,6 +19,23 @@ const TambahSiswa: React.FC<TambahSiswaProps> = ({ onBack }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [canCreateStudents, setCanCreateStudents] = useState(false);
+
+  // Check permissions on component mount
+  React.useEffect(() => {
+    checkPermissions();
+  }, [db]);
+
+  const checkPermissions = async () => {
+    if (!db) return;
+    
+    try {
+      const canCreate = await db.checkPermission('students', 'create');
+      setCanCreateStudents(canCreate);
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+    }
+  };
 
   // Generate class options
   const generateClassOptions = () => {
@@ -263,13 +280,19 @@ const TambahSiswa: React.FC<TambahSiswaProps> = ({ onBack }) => {
               >
                 Batal
               </button>
-              <button
-                type="submit"
-                disabled={loading || !db}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Menyimpan...' : 'Simpan Siswa'}
-              </button>
+              {canCreateStudents ? (
+                <button
+                  type="submit"
+                  disabled={loading || !db}
+                  className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Menyimpan...' : 'Simpan Siswa'}
+                </button>
+              ) : (
+                <div className="px-6 py-2 bg-gray-300 text-gray-600 rounded-lg">
+                  Tidak ada izin untuk menambah siswa
+                </div>
+              )}
             </div>
           </form>
         </div>

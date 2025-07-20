@@ -144,28 +144,28 @@ INSERT INTO `user_permissions` (`user_id`, `permission`, `can_read`, `can_create
 -- Admin 1 (admin) - FULL ACCESS
 (1, 'users', 1, 1, 1, 1),
 (1, 'students', 1, 1, 1, 1),
-(1, 'payments', 1, 1, 1, 1),
+(1, 'payments', 1, 1, 1, 0),        -- No delete for payments (feature not available)
 (1, 'payment_types', 1, 1, 1, 1),
 -- Admin 2 (admin2) - FULL ACCESS
 (3, 'users', 1, 1, 1, 1),
 (3, 'students', 1, 1, 1, 1),
-(3, 'payments', 1, 1, 1, 1),
+(3, 'payments', 1, 1, 1, 0),        -- No delete for payments (feature not available)
 (3, 'payment_types', 1, 1, 1, 1),
 -- Super Admin - FULL ACCESS
 (5, 'users', 1, 1, 1, 1),
 (5, 'students', 1, 1, 1, 1),
-(5, 'payments', 1, 1, 1, 1),
+(5, 'payments', 1, 1, 1, 0),        -- No delete for payments (feature not available)
 (5, 'payment_types', 1, 1, 1, 1);
 
 -- Insert LIMITED permissions for operators (CORRECTED)
 INSERT INTO `user_permissions` (`user_id`, `permission`, `can_read`, `can_create`, `can_update`, `can_delete`) VALUES
 -- Operator 1 (operator) - LIMITED ACCESS
 (2, 'students', 1, 0, 0, 0),        -- READ ONLY
-(2, 'payments', 1, 1, 1, 0),        -- CREATE/READ/UPDATE (no DELETE)
+(2, 'payments', 1, 1, 1, 0),        -- CREATE/READ/UPDATE (no DELETE - feature not available)
 (2, 'payment_types', 1, 0, 0, 0),   -- READ ONLY
 -- Operator 2 (operator2) - LIMITED ACCESS
 (4, 'students', 1, 0, 0, 0),        -- READ ONLY
-(4, 'payments', 1, 1, 1, 0),        -- CREATE/READ/UPDATE (no DELETE)
+(4, 'payments', 1, 1, 1, 0),        -- CREATE/READ/UPDATE (no DELETE - feature not available)
 (4, 'payment_types', 1, 0, 0, 0);   -- READ ONLY
 
 -- Insert sample payment types

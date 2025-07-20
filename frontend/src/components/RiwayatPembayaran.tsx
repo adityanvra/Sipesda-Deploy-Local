@@ -44,6 +44,24 @@ const RiwayatPembayaran: React.FC = () => {
     other: []
   });
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [canUpdatePayments, setCanUpdatePayments] = useState(false);
+
+  // Check permissions on component mount
+  useEffect(() => {
+    checkPermissions();
+  }, [db]);
+
+  const checkPermissions = async () => {
+    if (!db) return;
+    
+    try {
+      const canUpdate = await db.checkPermission('payments', 'update');
+      
+      setCanUpdatePayments(canUpdate);
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+    }
+  };
 
   const paymentTypes = [
     'SPP Bulanan',
