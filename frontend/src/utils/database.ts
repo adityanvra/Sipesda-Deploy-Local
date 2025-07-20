@@ -10,7 +10,6 @@ class SessionManager {
   private sessionToken: string | null = null;
   private sessionCheckInterval: NodeJS.Timeout | null = null;
   private keepAliveInterval: NodeJS.Timeout | null = null;
-  private lastActivity: number = Date.now();
   private activityListeners: Array<{ event: string; handler: EventListener }> | null = null;
 
   static getInstance(): SessionManager {
@@ -81,7 +80,7 @@ class SessionManager {
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     
     const activityHandler = () => {
-      this.lastActivity = Date.now();
+      // Activity detected - session will be kept alive by keep-alive interval
     };
 
     events.forEach(event => {
