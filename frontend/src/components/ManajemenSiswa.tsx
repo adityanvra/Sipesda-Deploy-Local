@@ -298,24 +298,28 @@ const ManajemenSiswa: React.FC<ManajemenSiswaProps> = ({
                 </button>
               )}
 
-              {/* Tombol Import */}
-              <label className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 cursor-pointer">
-                📥 Import Excel
-                <input
-                  type="file"
-                  accept=".xlsx, .xls"
-                  onChange={handleExcelUpload}
-                  className="hidden"
-                />
-              </label>
+              {/* Tombol Import - Hanya untuk Admin */}
+              {canCreateStudents && (
+                <label className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 cursor-pointer">
+                  📥 Import Excel
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={handleExcelUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
 
-              {/* Tombol Download Template */}
-              <button
-                onClick={handleDownloadTemplate}
-                className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600"
-              >
-                📄 Unduh Template
-              </button>
+              {/* Tombol Download Template - Hanya untuk Admin */}
+              {canCreateStudents && (
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600"
+                >
+                  📄 Unduh Template
+                </button>
+              )}
             </div>
           </div>
 

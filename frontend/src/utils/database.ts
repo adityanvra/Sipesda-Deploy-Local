@@ -246,7 +246,7 @@ class DatabaseManager {
   async getStudentByNisn(nisn: string): Promise<Student | null> {
     try {
       const token = this.sessionManager.getSessionToken();
-      const response = await axios.get(`${API_BASE_URL}/students/nisn/${nisn}`, {
+      const response = await axios.get(`${API_BASE_URL}/students/${nisn}`, {
         headers: { 'x-session-token': token }
       });
       return response.data;

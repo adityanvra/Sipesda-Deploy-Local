@@ -39,6 +39,7 @@ const Keuangan: React.FC = () => {
   } | null>(null);
   const [canCreatePayments, setCanCreatePayments] = useState(false);
   const [canUpdatePayments, setCanUpdatePayments] = useState(false);
+  const [canDeletePayments, setCanDeletePayments] = useState(false);
 
   // Check permissions on component mount
   useEffect(() => {
@@ -51,9 +52,11 @@ const Keuangan: React.FC = () => {
     try {
       const canCreate = await db.checkPermission('payments', 'create');
       const canUpdate = await db.checkPermission('payments', 'update');
+      const canDelete = await db.checkPermission('payments', 'delete');
       
       setCanCreatePayments(canCreate);
       setCanUpdatePayments(canUpdate);
+      setCanDeletePayments(canDelete);
     } catch (error) {
       console.error('Error checking permissions:', error);
     }
